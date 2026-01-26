@@ -180,15 +180,13 @@ class AiService {
 
     return {
       content: data.response,
-      tool_calls: data.tool_used
-        ? [
-            {
-              name: data.tool_used.tool_name,
-              input: data.tool_used.tool_args,
-              output: data.tool_used.tool_output,
-            },
-          ]
-        : [],
+      tool_calls: Array.isArray(data.tool_used)
+        ? data.tool_used.map(t => ({
+            name: t.tool_name,
+            input: t.tool_args,
+            output: t.tool_output
+          }))
+        : []
     }
   }
 

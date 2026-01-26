@@ -45,6 +45,13 @@
         </div>
       </div>
 
+      <!-- AI 總結 -->
+      <AiSummary
+        class="mb-4"
+        :prompt="`查詢農場「${farm.name}」(ID: ${farm.id}) 最新的感測器資料與農務記錄，給出該農場的狀態總結與建議。字數控制在150字內。`"
+        :cache-key="`farm-${farm.id}-summary`"
+      />
+
       <!-- Tab 切換 -->
       <div
         class="mb-4 rounded border border-slate-200 bg-white dark:border-slate-700
@@ -113,6 +120,7 @@ import { ChevronLeft } from 'lucide-vue-next'
 import EditFarmModal from '@/components/farm/EditFarmModal.vue'
 import FarmSensorTab from '@/components/farm/FarmSensorTab.vue'
 import FarmOperationsTab from '@/components/farm/FarmOperationsTab.vue'
+import AiSummary from '@/components/ai/AiSummary.vue'
 
 const route = useRoute()
 const { showToast } = useToast()

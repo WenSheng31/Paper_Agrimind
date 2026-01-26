@@ -37,7 +37,7 @@ class QueryResponse(BaseModel):
     """查詢回應模型"""
     response: str
     session_id: str
-    tool_used: Optional[ToolUsage] = None
+    tool_used: list[ToolUsage] = []
 
 
 class Tool(BaseModel):
@@ -79,7 +79,7 @@ class MCPClient:
         response = await self.session.list_tools()
         return [{"name": tool.name, "description": tool.description} for tool in response.tools]
 
-    async def process_query(self, query: str, session_id: str) -> tuple[str, Optional[ToolUsage]]:
+    async def process_query(self, query: str, session_id: str) -> tuple[str, list[ToolUsage]]:
         """處理用戶查詢，使用 Claude 和可用工具"""
         if session_id not in self.conversations:
             self.conversations[session_id] = []
@@ -93,63 +93,67 @@ class MCPClient:
             for tool in response.tools
         ]
 
-        response = self.anthropic.messages.create(
-            model=ANTHROPIC_MODEL,
-            max_tokens=1000,
-            system="請使用繁體中文回答",
-            messages=conversation_history,
-            tools=available_tools
-        )
+        all_tool_usages = []
+        final_text = ""
 
-        final_text = []
-        assistant_content = []
-        tool_usage = None
+        while True:
+            response = self.anthropic.messages.create(
+                model=ANTHROPIC_MODEL,
+                max_tokens=1000,
+                system="請使用繁體中文回答用戶問題",
+                messages=conversation_history,
+                tools=available_tools
+            )
 
-        for content in response.content:
-            assistant_content.append(content)
+            assistant_content = []
+            tool_results = []
+            has_tool_use = False
 
-            if content.type == "text":
-                final_text.append(content.text)
-            elif content.type == "tool_use":
-                tool_name = content.name
-                tool_args = content.input
+            for content in response.content:
+                assistant_content.append(content)
 
-                result = await self.session.call_tool(tool_name, tool_args)
+                if content.type == "tool_use":
+                    has_tool_use = True
+                    tool_name = content.name
+                    tool_args = content.input
 
-                # 提取工具回傳的文字內容
-                output_text = ""
-                if result.content:
-                    for item in result.content:
-                        if hasattr(item, "text"):
-                            output_text += item.text
-                        else:
-                            output_text += str(item)
-                
-                tool_usage = ToolUsage(
-                    tool_name=tool_name, 
-                    tool_args=tool_args,
-                    tool_output=output_text
-                )
+                    result = await self.session.call_tool(tool_name, tool_args)
 
-                conversation_history.append({"role": "assistant", "content": assistant_content})
+                    # 提取工具回傳的文字內容
+                    output_text = ""
+                    if result.content:
+                        for item in result.content:
+                            if hasattr(item, "text"):
+                                output_text += item.text
+                            else:
+                                output_text += str(item)
+                    
+                    all_tool_usages.append(ToolUsage(
+                        tool_name=tool_name, 
+                        tool_args=tool_args,
+                        tool_output=output_text
+                    ))
+
+                    tool_results.append({
+                        "type": "tool_result",
+                        "tool_use_id": content.id,
+                        "content": output_text
+                    })
+
+            conversation_history.append({"role": "assistant", "content": assistant_content})
+
+            if has_tool_use:
                 conversation_history.append({
                     "role": "user",
-                    "content": [{"type": "tool_result", "tool_use_id": content.id, "content": result.content}]
+                    "content": tool_results
                 })
+            else:
+                # 沒有工具調用，這是最終回應
+                text_blocks = [c.text for c in response.content if c.type == "text"]
+                final_text = "\n".join(text_blocks)
+                break
 
-                response = self.anthropic.messages.create(
-                    model=ANTHROPIC_MODEL,
-                    max_tokens=1000,
-                    system="請使用繁體中文回答",
-                    messages=conversation_history,
-                )
-
-                final_text.append(response.content[0].text)
-                conversation_history.append({"role": "assistant", "content": response.content})
-                return "\n".join(final_text), tool_usage
-
-        conversation_history.append({"role": "assistant", "content": assistant_content})
-        return "\n".join(final_text), tool_usage
+        return final_text, all_tool_usages
 
     async def cleanup(self):
         """清理資源並關閉連接"""
@@ -167,8 +171,8 @@ router = APIRouter(prefix="/api/ai", tags=["AI"])
 async def query_ai(request: QueryRequest, _user=Depends(get_current_user)):
     """向 AI 發送查詢並獲取回應"""
     try:
-        response, tool_usage = await mcp_client.process_query(request.query, request.session_id)
-        return QueryResponse(response=response, session_id=request.session_id, tool_used=tool_usage)
+        response, tool_usages = await mcp_client.process_query(request.query, request.session_id)
+        return QueryResponse(response=response, session_id=request.session_id, tool_used=tool_usages)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

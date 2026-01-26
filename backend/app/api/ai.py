@@ -65,7 +65,7 @@ class MCPClient:
         server_params = StdioServerParameters(
             command="python",
             args=[SERVER_PATH],
-            env=None,
+            env=os.environ.copy(),
         )
 
         stdio_transport = await self.exit_stack.enter_async_context(stdio_client(server_params))

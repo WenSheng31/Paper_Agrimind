@@ -157,6 +157,11 @@ def query_database(
       precipitation(mm), sunshine_hours(hr), soil_moisture(%), soil_n, soil_p, soil_k (mg/kg)
     - operations（操作記錄）: id, farm_id, user_id, description, performed_at
 
+    重要：sensor_data 每小時記錄一筆，資料量參考：
+    - 1天 = 24筆，1週 = 168筆，1月 = 720筆
+    - 查詢超過1天的資料時，務必使用 aggregation + group_by 做聚合，避免拉取大量原始資料
+    - 例如查詢一週資料：用 group_by="day" 得到7筆日平均，而非168筆原始資料
+
     參數：
     - table: 資料表名稱
     - fields: 要查詢的欄位列表，如 ["temperature", "humidity"]，不指定則返回所有欄位
@@ -169,8 +174,6 @@ def query_database(
     - order_by: 排序欄位
     - order_dir: 排序方向，"asc" 或 "desc"（預設）
     - limit: 返回筆數上限，預設 100，最大 500
-
-    備註：sensor_data 每小時記錄一筆，查詢長時間範圍請使用 aggregation + group_by 避免資料過多。
     """
     db = get_db()
 
@@ -334,14 +337,15 @@ def _get_group_column(model, group_by: str, table: str):
     elif table == "farms" and hasattr(model, "created_at"):
         time_field = model.created_at
 
+    # 使用 to_char 並指定時區，避免 UTC 轉換問題
     if group_by == "hour" and time_field is not None:
-        return func.date_trunc("hour", time_field)
+        return func.to_char(time_field, "YYYY-MM-DD HH24:00")
     elif group_by == "day" and time_field is not None:
-        return func.date_trunc("day", time_field)
+        return func.to_char(time_field, "YYYY-MM-DD")
     elif group_by == "week" and time_field is not None:
-        return func.date_trunc("week", time_field)
+        return func.to_char(time_field, "IYYY-IW")  # ISO 年-週
     elif group_by == "month" and time_field is not None:
-        return func.date_trunc("month", time_field)
+        return func.to_char(time_field, "YYYY-MM")
     elif group_by in ALLOWED_FIELDS.get(table, set()):
         return getattr(model, group_by, None)
 

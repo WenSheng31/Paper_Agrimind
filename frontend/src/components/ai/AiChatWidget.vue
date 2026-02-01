@@ -1,16 +1,40 @@
 <template>
   <div>
-    <!-- 圓形懸浮按鈕 -->
+    <!-- 圓形懸浮按鈕 + 提示框 -->
     <transition name="fab">
-      <button
-        v-if="!isOpen"
-        @click="isOpen = true"
-        class="fixed right-4 bottom-4 z-50 flex h-16 w-16 cursor-pointer items-center justify-center
-          rounded-full bg-emerald-600 text-white shadow-lg transition-transform duration-75
-          select-none hover:bg-emerald-700 active:scale-90 sm:right-6 sm:bottom-6"
-      >
-        <Bot :size="32" />
-      </button>
+      <div v-if="!isOpen" class="fixed right-4 bottom-4 z-50 sm:right-6 sm:bottom-6">
+        <!-- 提示框 -->
+        <transition name="tooltip">
+          <div
+            v-if="showTooltip"
+            class="absolute bottom-20 right-0 w-48 rounded-lg border border-slate-200 bg-white
+              p-3 text-sm text-slate-700 shadow-lg dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+          >
+            <button
+              @click="dismissTooltip"
+              class="absolute top-1 right-1 cursor-pointer p-1 text-slate-400 hover:text-slate-600
+                dark:hover:text-slate-200"
+            >
+              <X :size="14" />
+            </button>
+            <p>有任何農業問題？<br>點我開啟 AI 助手聊天！</p>
+            <!-- 小三角箭頭 -->
+            <div
+              class="absolute -bottom-2 right-6 h-4 w-4 rotate-45 border-r border-b
+                border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800"
+            ></div>
+          </div>
+        </transition>
+
+        <button
+          @click="isOpen = true"
+          class="flex h-16 w-16 cursor-pointer items-center justify-center rounded-full
+            bg-emerald-600 text-white shadow-lg transition-transform duration-75 select-none
+            hover:bg-emerald-700 active:scale-90"
+        >
+          <Bot :size="32" />
+        </button>
+      </div>
     </transition>
 
     <!-- 聊天視窗 -->
@@ -42,6 +66,25 @@
           ref="messagesContainer"
           class="flex-1 space-y-4 overflow-y-auto overscroll-contain bg-slate-50 p-4 dark:bg-slate-950"
         >
+          <!-- 問題範例（無訊息時顯示） -->
+          <div v-if="messages.length === 0 && !loading" key="suggestions" class="flex h-full flex-col items-center justify-center gap-4">
+            <Bot :size="40" class="text-slate-300 dark:text-slate-600" />
+            <p class="text-sm text-slate-500 dark:text-slate-400">試試問我這些問題：</p>
+            <div class="flex w-full flex-col gap-2">
+              <button
+                v-for="(q, i) in suggestedQuestions"
+                :key="i"
+                @click="sendSuggestion(q)"
+                class="w-full cursor-pointer rounded border border-slate-200 bg-white px-4 py-3
+                  text-left text-sm text-slate-700 transition hover:border-emerald-400 hover:bg-emerald-50
+                  dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300
+                  dark:hover:border-emerald-500 dark:hover:bg-emerald-900/20"
+              >
+                {{ q }}
+              </button>
+            </div>
+          </div>
+
           <div
             v-for="msg in messages"
             :key="msg.id"
@@ -160,6 +203,27 @@ const loading = ref(false)
 const messagesContainer = ref(null)
 const inputField = ref(null)
 const expandedTools = ref({})
+const showTooltip = ref(false)
+
+setTimeout(() => {
+  showTooltip.value = true
+}, 3000)
+
+const dismissTooltip = () => {
+  showTooltip.value = false
+}
+
+const suggestedQuestions = [
+  '我的農場最近感測數據如何？',
+  '幫我查詢今天的天氣',
+  '最近有哪些農務操作記錄？',
+  '有什麼病蟲害防治的建議嗎？',
+]
+
+const sendSuggestion = (question) => {
+  inputMessage.value = question
+  sendMessage()
+}
 
 // 每次頁面刷新生成新的 session ID
 const sessionId = `session-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
@@ -195,6 +259,7 @@ const handleKeyDown = (event) => {
 // 監控開啟狀態，自動聚焦
 watch(isOpen, async (newVal) => {
   if (newVal) {
+    showTooltip.value = false
     await nextTick()
     setTimeout(() => {
       inputField.value?.focus()
@@ -241,6 +306,8 @@ const sendMessage = async () => {
     showToast(err.message || '發送失敗', 'error')
   } finally {
     loading.value = false
+    await nextTick()
+    inputField.value?.focus()
   }
 }
 
@@ -275,6 +342,18 @@ const scrollToBottom = async () => {
 .fab-leave-to {
   opacity: 0;
   transform: scale(0.8);
+}
+
+/* 提示框動畫 */
+.tooltip-enter-active,
+.tooltip-leave-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tooltip-enter-from,
+.tooltip-leave-to {
+  opacity: 0;
+  transform: translateY(8px);
 }
 
 /* 聊天視窗動畫 */

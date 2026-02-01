@@ -69,22 +69,22 @@
 
     <!-- 用戶資訊和登出 -->
     <div class="p-4">
-      <!-- 主題切換按鈕 -->
-      <button
-        @click="toggleTheme"
-        class="mb-3 flex w-full cursor-pointer items-center justify-between rounded bg-slate-50 p-2 px-3
-          text-sm text-slate-700 transition hover:bg-slate-100 dark:bg-slate-700/50
-          dark:text-slate-300 dark:hover:bg-slate-700"
-      >
-        <span class="flex items-center gap-2">
+      <!-- 主題切換 -->
+      <div class="mb-3 flex justify-start">
+        <button
+          @click="toggleTheme"
+          class="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-slate-50
+            text-slate-500 transition hover:bg-slate-200 dark:bg-slate-700/50 dark:text-slate-400
+            dark:hover:bg-slate-600"
+        >
           <component :is="themeIcon" :size="16" />
-          <span>{{ themeLabel }}</span>
-        </span>
-        <span class="text-xs text-slate-400">{{ themeModeLabel }}</span>
-      </button>
-
+        </button>
+      </div>
       <div class="mb-3 flex items-center gap-3 rounded bg-slate-50 p-2 dark:bg-slate-700/50">
-        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-600 dark:bg-emerald-500">
+        <div
+          class="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-600
+            dark:bg-emerald-500"
+        >
           <span class="text-sm font-medium text-white">
             {{ user?.username?.charAt(0).toUpperCase() || '?' }}
           </span>

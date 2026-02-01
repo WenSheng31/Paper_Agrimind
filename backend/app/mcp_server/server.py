@@ -361,85 +361,8 @@ def _format_value(value):
     return value
 
 
-# ============== 農務記錄工具 ==============
 
-@mcp.tool()
-def create_operation(
-    farm_id: int,
-    description: str,
-    performed_at: Optional[str] = None
-) -> Dict[str, Any]:
-    """
-    新增農務操作記錄。
-
-    參數：
-    - farm_id: 農場 ID（必填），可先用 query_database(table="farms") 查詢農場列表取得 ID
-    - description: 操作內容描述（必填），如「施肥」、「灌溉」、「噴藥」、「採收」等
-    - performed_at: 操作時間（選填），格式為 ISO 格式如 "2024-01-15T10:30:00"，不填則使用當前時間
-
-    使用流程：
-    1. 先用 query_database(table="farms", fields=["id", "name"]) 查詢農場列表
-    2. 確認目標農場的 ID
-    3. 呼叫此工具新增記錄
-
-    範例：
-    - create_operation(farm_id=1, description="施用氮肥 50kg")
-    - create_operation(farm_id=2, description="灌溉 30 分鐘")
-    - create_operation(farm_id=1, description="採收番茄", performed_at="2024-01-10T08:00:00")
-    """
-    db = get_db()
-
-    try:
-        # 驗證農場是否存在
-        farm = db.query(Farm).filter(Farm.id == farm_id).first()
-        if not farm:
-            return {"error": f"找不到農場 ID: {farm_id}，請先用 query_database(table='farms') 查詢農場列表"}
-
-        # 驗證描述不為空
-        if not description or not description.strip():
-            return {"error": "操作描述不能為空"}
-
-        # 處理時間
-        operation_time = None
-        if performed_at:
-            try:
-                operation_time = datetime.fromisoformat(performed_at)
-            except ValueError:
-                return {"error": f"時間格式錯誤，請使用 ISO 格式，如 2024-01-15T10:30:00"}
-        else:
-            operation_time = datetime.now()
-
-        # 建立記錄
-        operation = Operation(
-            farm_id=farm_id,
-            description=description.strip(),
-            performed_at=operation_time
-        )
-
-        db.add(operation)
-        db.commit()
-        db.refresh(operation)
-
-        return {
-            "success": True,
-            "message": "農務記錄已新增",
-            "operation": {
-                "id": operation.id,
-                "farm_id": operation.farm_id,
-                "farm_name": farm.name,
-                "description": operation.description,
-                "performed_at": operation.performed_at.isoformat()
-            }
-        }
-
-    except Exception as e:
-        db.rollback()
-        return {"error": f"新增失敗: {str(e)}"}
-    finally:
-        db.close()
-
-
-# ============== 氣象工具 (保留) ==============
+# ============== 氣象工具 ==============
 
 @mcp.tool()
 def get_weather(location: str) -> Dict[str, Any]:

@@ -139,17 +139,6 @@ const themeIcon = computed(() => {
   return Laptop
 })
 
-const themeLabel = computed(() => {
-  if (theme.value === 'light') return '淺色模式'
-  if (theme.value === 'dark') return '深色模式'
-  return '跟隨系統'
-})
-
-const themeModeLabel = computed(() => {
-  if (theme.value === 'light') return 'Light'
-  if (theme.value === 'dark') return 'Dark'
-  return 'Auto'
-})
 
 function handleLogout() {
   authStore.logout()

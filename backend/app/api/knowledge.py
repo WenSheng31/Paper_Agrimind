@@ -13,7 +13,7 @@ from ..schemas.knowledge import (
 from ..schemas.agriculture import PaginatedResponse
 from ..services.knowledge import extract_text_from_pdf, process_and_store
 from ..services.embedding import get_embedding
-from .auth import get_current_user
+from .auth import get_current_user, get_current_admin_user
 
 router = APIRouter(prefix="/api/knowledge", tags=["knowledge"])
 
@@ -62,7 +62,7 @@ def list_knowledge(
 def upload_text(
     data: KnowledgeDocumentCreate,
     db: Session = Depends(get_db),
-    _user=Depends(get_current_user),
+    _user=Depends(get_current_admin_user),
 ):
     if not data.title.strip() or not data.content.strip():
         raise HTTPException(status_code=400, detail="標題和內容不能為空")
@@ -80,7 +80,7 @@ def upload_pdf(
     title: str = Form(...),
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    _user=Depends(get_current_user),
+    _user=Depends(get_current_admin_user),
 ):
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="僅支援 PDF 檔案")
@@ -98,11 +98,31 @@ def upload_pdf(
     )
 
 
+@router.get("/{title}/chunks")
+def get_knowledge_chunks(
+    title: str,
+    db: Session = Depends(get_db),
+    _user=Depends(get_current_user),
+):
+    chunks = (
+        db.query(KnowledgeDocument)
+        .filter(KnowledgeDocument.title == title)
+        .order_by(KnowledgeDocument.chunk_index)
+        .all()
+    )
+    if not chunks:
+        raise HTTPException(status_code=404, detail="找不到該知識文件")
+    return [
+        {"chunk_index": c.chunk_index, "content": c.content}
+        for c in chunks
+    ]
+
+
 @router.delete("/{title}")
 def delete_knowledge(
     title: str,
     db: Session = Depends(get_db),
-    _user=Depends(get_current_user),
+    _user=Depends(get_current_admin_user),
 ):
     count = db.query(KnowledgeDocument).filter(KnowledgeDocument.title == title).delete()
     db.commit()

@@ -4,6 +4,7 @@
     <div class="mb-6 flex items-center justify-between">
       <h1 class="text-3xl font-bold text-slate-800 dark:text-white">農場管理</h1>
       <button
+        v-if="isAdmin"
         @click="showCreateModal = true"
         class="flex cursor-pointer items-center gap-2 rounded bg-emerald-600 px-4 py-2 text-white
           transition hover:bg-emerald-700"
@@ -21,6 +22,7 @@
       <Building :size="64" class="mx-auto mb-4 text-slate-400 dark:text-slate-500" />
       <p class="mb-4 text-slate-600 dark:text-slate-400">尚無農場資料</p>
       <button
+        v-if="isAdmin"
         @click="showCreateModal = true"
         class="cursor-pointer rounded bg-emerald-600 px-4 py-2 text-white transition
           hover:bg-emerald-700"
@@ -41,8 +43,9 @@
         <div class="mb-4 flex items-start justify-between">
           <!-- 農場名稱 -->
           <h2 class="text-xl font-semibold text-slate-800 dark:text-white">{{ farm.name }}</h2>
-          <!-- 刪除農場按鈕 -->
+          <!-- 刪除農場按鈕（僅管理員） -->
           <button
+            v-if="isAdmin"
             @click.stop="openDeleteModal(farm)"
             class="cursor-pointer text-red-600 transition hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
           >
@@ -160,8 +163,13 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useToast } from '@/composables/useToast'
+import { useAuthStore } from '@/stores/auth'
+import { storeToRefs } from 'pinia'
 import api from '@/services/api'
 import { Plus, Building, Trash2 } from 'lucide-vue-next'
+
+const authStore = useAuthStore()
+const { isAdmin } = storeToRefs(authStore)
 
 const { showToast } = useToast()
 

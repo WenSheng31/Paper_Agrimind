@@ -1,6 +1,6 @@
 <template>
   <div class="p-6">
-    <div class="mb-4 flex items-center justify-between">
+    <div v-if="isAdmin" class="mb-4 flex items-center justify-between">
       <button
         @click="showAddModal = true"
         class="flex cursor-pointer items-center gap-2 rounded bg-emerald-600 px-4 py-2 text-white
@@ -13,7 +13,10 @@
 
     <div v-if="loading" class="py-12 text-center text-slate-600 dark:text-slate-400">載入中...</div>
 
-    <div v-else-if="operations.length === 0" class="py-12 text-center text-slate-600 dark:text-slate-400">
+    <div
+      v-else-if="operations.length === 0"
+      class="py-12 text-center text-slate-600 dark:text-slate-400"
+    >
       尚無農務記錄
     </div>
 
@@ -34,6 +37,7 @@
               描述
             </th>
             <th
+              v-if="isAdmin"
               class="w-24 border-b border-slate-200 px-4 py-3 text-center text-sm font-medium
                 text-slate-700 dark:border-slate-700 dark:text-slate-300"
             >
@@ -42,19 +46,28 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="op in operations" :key="op.id" class="transition hover:bg-slate-50 dark:hover:bg-slate-700/50">
+          <tr
+            v-for="op in operations"
+            :key="op.id"
+            class="transition hover:bg-slate-50 dark:hover:bg-slate-700/50"
+          >
             <td
-              class="border-b border-slate-200 px-4 py-3 text-sm whitespace-nowrap text-slate-600 dark:border-slate-700 dark:text-slate-400"
+              class="border-b border-slate-200 px-4 py-3 text-sm whitespace-nowrap text-slate-600
+                dark:border-slate-700 dark:text-slate-400"
             >
               {{ formatDateTime(op.performed_at) }}
             </td>
-            <td class="border-b border-slate-200 px-4 py-3 text-sm text-slate-800 dark:border-slate-700 dark:text-slate-200">
+            <td
+              class="border-b border-slate-200 px-4 py-3 text-sm text-slate-800
+                dark:border-slate-700 dark:text-slate-200"
+            >
               {{ op.description }}
             </td>
-            <td class="border-b border-slate-200 px-4 py-3 text-center dark:border-slate-700">
+            <td v-if="isAdmin" class="border-b border-slate-200 px-4 py-3 text-center dark:border-slate-700">
               <button
                 @click="handleDelete(op)"
-                class="cursor-pointer text-red-600 transition hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                class="cursor-pointer text-red-600 transition hover:text-red-700 dark:text-red-400
+                  dark:hover:text-red-300"
               >
                 <Trash2 :size="18" />
               </button>
@@ -77,11 +90,12 @@
         <button
           @click="changePage(currentPage - 1)"
           :disabled="currentPage === 1"
-          class="cursor-pointer rounded border border-slate-300 p-2 text-slate-700 transition
-            hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
+          class="flex h-8 w-8 cursor-pointer items-center justify-center rounded border border-slate-300 text-slate-700 transition
+            hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600
+            dark:text-slate-300 dark:hover:bg-slate-700"
           title="上一頁"
         >
-          <ChevronLeft :size="18" />
+          <ChevronLeft :size="16" />
         </button>
         <div class="flex gap-1">
           <button
@@ -89,10 +103,11 @@
             :key="page"
             @click="changePage(page)"
             :class="[
-              'cursor-pointer rounded border px-3 py-1 text-sm transition',
+              'flex h-8 min-w-8 cursor-pointer items-center justify-center rounded border px-2 text-sm transition',
               page === currentPage
                 ? 'border-emerald-600 bg-emerald-600 text-white'
-                : 'border-slate-300 text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700',
+                : `border-slate-300 text-slate-700 hover:bg-slate-50 dark:border-slate-600
+                  dark:text-slate-300 dark:hover:bg-slate-700`,
             ]"
           >
             {{ page }}
@@ -101,11 +116,12 @@
         <button
           @click="changePage(currentPage + 1)"
           :disabled="currentPage === totalPages"
-          class="cursor-pointer rounded border border-slate-300 p-2 text-slate-700 transition
-            hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
+          class="flex h-8 w-8 cursor-pointer items-center justify-center rounded border border-slate-300 text-slate-700 transition
+            hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600
+            dark:text-slate-300 dark:hover:bg-slate-700"
           title="下一頁"
         >
-          <ChevronRight :size="18" />
+          <ChevronRight :size="16" />
         </button>
       </div>
     </div>
@@ -139,7 +155,8 @@
             <button
               @click="deleteTarget = null"
               class="flex-1 cursor-pointer rounded border border-slate-300 px-4 py-2 text-slate-700
-                transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
+                transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300
+                dark:hover:bg-slate-700"
             >
               取消
             </button>
@@ -161,9 +178,14 @@
 <script setup>
 import { ref, onMounted, watch, computed } from 'vue'
 import { Plus, Trash2, ChevronLeft, ChevronRight } from 'lucide-vue-next'
+import { useAuthStore } from '@/stores/auth'
+import { storeToRefs } from 'pinia'
 import api from '@/services/api'
 import { useToast } from '@/composables/useToast'
 import AddOperationModal from './AddOperationModal.vue'
+
+const authStore = useAuthStore()
+const { isAdmin } = storeToRefs(authStore)
 
 const props = defineProps({
   farmId: {
@@ -262,7 +284,10 @@ async function confirmDelete() {
 
 watch(
   () => props.farmId,
-  () => loadData(),
+  () => {
+    currentPage.value = 1
+    loadData()
+  },
 )
 
 onMounted(() => {

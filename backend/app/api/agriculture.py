@@ -11,7 +11,7 @@ from ..schemas.agriculture import (
     PaginatedResponse, DashboardStats
 )
 from ..models.agriculture import Farm, SensorData, Operation
-from .auth import get_current_user
+from .auth import get_current_user, get_current_admin_user
 
 router = APIRouter(prefix="/api/agriculture", tags=["agriculture"])
 
@@ -38,7 +38,7 @@ def get_dashboard_stats(db: Session = Depends(get_db), _user=Depends(get_current
 # ===== Farm CRUD =====
 
 @router.post("/farms", response_model=FarmResponse, status_code=201)
-def create_farm(farm: FarmCreate, db: Session = Depends(get_db), _user=Depends(get_current_user)):
+def create_farm(farm: FarmCreate, db: Session = Depends(get_db), _user=Depends(get_current_admin_user)):
     db_farm = Farm(**farm.model_dump())
     db.add(db_farm)
     db.commit()
@@ -57,7 +57,7 @@ def get_farm(farm_id: int, db: Session = Depends(get_db), _user=Depends(get_curr
 
 
 @router.put("/farms/{farm_id}", response_model=FarmResponse)
-def update_farm(farm_id: int, farm_update: FarmUpdate, db: Session = Depends(get_db), _user=Depends(get_current_user)):
+def update_farm(farm_id: int, farm_update: FarmUpdate, db: Session = Depends(get_db), _user=Depends(get_current_admin_user)):
     db_farm = get_or_404(db, Farm, farm_id)
     for key, value in farm_update.model_dump(exclude_unset=True).items():
         setattr(db_farm, key, value)
@@ -67,7 +67,7 @@ def update_farm(farm_id: int, farm_update: FarmUpdate, db: Session = Depends(get
 
 
 @router.delete("/farms/{farm_id}", status_code=204)
-def delete_farm(farm_id: int, db: Session = Depends(get_db), _user=Depends(get_current_user)):
+def delete_farm(farm_id: int, db: Session = Depends(get_db), _user=Depends(get_current_admin_user)):
     db_farm = get_or_404(db, Farm, farm_id)
     db.delete(db_farm)
     db.commit()
@@ -76,7 +76,7 @@ def delete_farm(farm_id: int, db: Session = Depends(get_db), _user=Depends(get_c
 # ===== SensorData CRD (no Update) =====
 
 @router.post("/farms/{farm_id}/sensor-data", response_model=SensorDataResponse, status_code=201)
-def create_sensor_data(farm_id: int, data: SensorDataCreate, db: Session = Depends(get_db), _user=Depends(get_current_user)):
+def create_sensor_data(farm_id: int, data: SensorDataCreate, db: Session = Depends(get_db), _user=Depends(get_current_admin_user)):
     get_or_404(db, Farm, farm_id)
     db_data = SensorData(**data.model_dump(), farm_id=farm_id)
     db.add(db_data)
@@ -107,7 +107,7 @@ def get_sensor_data(
 
 
 @router.delete("/sensor-data/{data_id}", status_code=204)
-def delete_sensor_data(data_id: int, db: Session = Depends(get_db), _user=Depends(get_current_user)):
+def delete_sensor_data(data_id: int, db: Session = Depends(get_db), _user=Depends(get_current_admin_user)):
     db_data = get_or_404(db, SensorData, data_id)
     db.delete(db_data)
     db.commit()
@@ -116,7 +116,7 @@ def delete_sensor_data(data_id: int, db: Session = Depends(get_db), _user=Depend
 # ===== Operation CRUD =====
 
 @router.post("/farms/{farm_id}/operations", response_model=OperationResponse, status_code=201)
-def create_operation(farm_id: int, op: OperationCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
+def create_operation(farm_id: int, op: OperationCreate, db: Session = Depends(get_db), user=Depends(get_current_admin_user)):
     get_or_404(db, Farm, farm_id)
     db_op = Operation(**op.model_dump(), farm_id=farm_id, user_id=user.id)
     db.add(db_op)
@@ -147,7 +147,7 @@ def get_operations(
 
 
 @router.put("/operations/{op_id}", response_model=OperationResponse)
-def update_operation(op_id: int, op_update: OperationUpdate, db: Session = Depends(get_db), _user=Depends(get_current_user)):
+def update_operation(op_id: int, op_update: OperationUpdate, db: Session = Depends(get_db), _user=Depends(get_current_admin_user)):
     db_op = get_or_404(db, Operation, op_id)
     for key, value in op_update.model_dump(exclude_unset=True).items():
         setattr(db_op, key, value)
@@ -157,7 +157,7 @@ def update_operation(op_id: int, op_update: OperationUpdate, db: Session = Depen
 
 
 @router.delete("/operations/{op_id}", status_code=204)
-def delete_operation(op_id: int, db: Session = Depends(get_db), _user=Depends(get_current_user)):
+def delete_operation(op_id: int, db: Session = Depends(get_db), _user=Depends(get_current_admin_user)):
     db_op = get_or_404(db, Operation, op_id)
     db.delete(db_op)
     db.commit()

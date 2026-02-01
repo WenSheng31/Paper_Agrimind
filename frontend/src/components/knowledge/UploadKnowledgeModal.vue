@@ -122,22 +122,34 @@ async function handleSubmit() {
     return
   }
 
+  if (activeTab.value === 'text') {
+    if (!content.value.trim()) {
+      showToast('請輸入內容', 'error')
+      return
+    }
+  } else {
+    if (!pdfFile.value) {
+      showToast('請選擇 PDF 檔案', 'error')
+      return
+    }
+    if (pdfFile.value.size > 10 * 1024 * 1024) {
+      showToast('檔案大小不能超過 10MB', 'error')
+      return
+    }
+  }
+
   submitting.value = true
   try {
     if (activeTab.value === 'text') {
-      if (!content.value.trim()) {
-        showToast('請輸入內容', 'error')
-        return
-      }
       await api.uploadKnowledgeText(title.value, content.value)
     } else {
-      if (!pdfFile.value) {
-        showToast('請選擇 PDF 檔案', 'error')
-        return
-      }
       await api.uploadKnowledgePdf(title.value, pdfFile.value)
     }
     showToast('知識文件上傳成功')
+    title.value = ''
+    content.value = ''
+    pdfFile.value = null
+    activeTab.value = 'text'
     emit('uploaded')
     emit('close')
   } catch (error) {

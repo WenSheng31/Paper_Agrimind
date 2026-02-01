@@ -26,13 +26,8 @@ class ApiService {
       const data = await response.json().catch(() => null)
 
       if (!response.ok) {
-        // 統一處理 401 Token 過期/無效
         if (response.status === 401) {
           localStorage.removeItem('token')
-          throw {
-            status: 401,
-            message: '憑證過期，請重新登入',
-          }
         }
 
         throw {
@@ -107,7 +102,9 @@ class ApiService {
 
   // ===== Sensor Data API =====
   async getSensorData(farmId, page = 1, pageSize = 10) {
-    return this.request(`/api/agriculture/farms/${farmId}/sensor-data?page=${page}&page_size=${pageSize}`)
+    return this.request(
+      `/api/agriculture/farms/${farmId}/sensor-data?page=${page}&page_size=${pageSize}`,
+    )
   }
 
   async createSensorData(farmId, sensorData) {
@@ -125,7 +122,9 @@ class ApiService {
 
   // ===== Operation API =====
   async getOperations(farmId, page = 1, pageSize = 10) {
-    return this.request(`/api/agriculture/farms/${farmId}/operations?page=${page}&page_size=${pageSize}`)
+    return this.request(
+      `/api/agriculture/farms/${farmId}/operations?page=${page}&page_size=${pageSize}`,
+    )
   }
 
   async createOperation(farmId, operationData) {
@@ -177,6 +176,10 @@ class ApiService {
     return data
   }
 
+  async getKnowledgeChunks(title) {
+    return this.request(`/api/knowledge/${encodeURIComponent(title)}/chunks`)
+  }
+
   async deleteKnowledge(title) {
     return this.request(`/api/knowledge/${encodeURIComponent(title)}`, {
       method: 'DELETE',
@@ -216,12 +219,12 @@ class AiService {
     return {
       content: data.response,
       tool_calls: Array.isArray(data.tool_used)
-        ? data.tool_used.map(t => ({
+        ? data.tool_used.map((t) => ({
             name: t.tool_name,
             input: t.tool_args,
-            output: t.tool_output
+            output: t.tool_output,
           }))
-        : []
+        : [],
     }
   }
 

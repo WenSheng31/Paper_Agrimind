@@ -18,14 +18,35 @@ def split_text_into_chunks(text: str, chunk_size: int = 500, overlap: int = 50) 
     if len(text) <= chunk_size:
         return [text]
 
+    # 優先在換行、句號等位置斷開
+    separators = ["\n\n", "\n", "。", "！", "？", ".", "!", "?", "；", ";"]
+
     chunks = []
     start = 0
     while start < len(text):
         end = start + chunk_size
-        chunk = text[start:end]
-        if chunk.strip():
-            chunks.append(chunk.strip())
-        start = end - overlap
+
+        if end >= len(text):
+            chunk = text[start:].strip()
+            if chunk:
+                chunks.append(chunk)
+            break
+
+        # 在 chunk_size 範圍內找最後一個分隔符
+        best_break = -1
+        for sep in separators:
+            pos = text.rfind(sep, start, end)
+            if pos > start and pos + len(sep) > best_break:
+                best_break = pos + len(sep)
+
+        if best_break > start:
+            end = best_break
+
+        chunk = text[start:end].strip()
+        if chunk:
+            chunks.append(chunk)
+
+        start = max(end - overlap, start + 1)
 
     return chunks
 

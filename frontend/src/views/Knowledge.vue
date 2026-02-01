@@ -4,6 +4,7 @@
     <div class="mb-6 flex items-center justify-between">
       <h1 class="text-3xl font-bold text-slate-800 dark:text-white">知識庫</h1>
       <button
+        v-if="isAdmin"
         @click="showUploadModal = true"
         class="flex cursor-pointer items-center gap-2 rounded bg-emerald-600 px-4 py-2 text-white
           transition hover:bg-emerald-700"
@@ -19,13 +20,7 @@
     <!-- 空狀態 -->
     <div v-else-if="documents.length === 0" class="py-12 text-center">
       <BookOpen :size="64" class="mx-auto mb-4 text-slate-400 dark:text-slate-500" />
-      <p class="mb-4 text-slate-600 dark:text-slate-400">尚無知識文件</p>
-      <button
-        @click="showUploadModal = true"
-        class="cursor-pointer rounded bg-emerald-600 px-4 py-2 text-white transition hover:bg-emerald-700"
-      >
-        上傳第一份文件
-      </button>
+      <p class="text-slate-600 dark:text-slate-400">尚無知識文件</p>
     </div>
 
     <!-- 文件列表 -->
@@ -38,20 +33,24 @@
               <th class="px-4 py-3 font-medium">來源檔名</th>
               <th class="px-4 py-3 font-medium">片段數</th>
               <th class="px-4 py-3 font-medium">建立時間</th>
-              <th class="px-4 py-3 font-medium">操作</th>
+              <th v-if="isAdmin" class="px-4 py-3 font-medium">操作</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
-            <tr
-              v-for="doc in documents"
-              :key="doc.title"
-              class="bg-white dark:bg-slate-900"
-            >
-              <td class="px-4 py-3 font-medium text-slate-800 dark:text-white">{{ doc.title }}</td>
+            <template v-for="doc in documents" :key="doc.title">
+            <tr class="bg-white dark:bg-slate-900">
+              <td class="px-4 py-3">
+                <button
+                  @click="toggleChunks(doc.title)"
+                  class="cursor-pointer font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+                >
+                  {{ doc.title }}
+                </button>
+              </td>
               <td class="px-4 py-3 text-slate-600 dark:text-slate-400">{{ doc.source_filename || '-' }}</td>
               <td class="px-4 py-3 text-slate-600 dark:text-slate-400">{{ doc.chunk_count }}</td>
               <td class="px-4 py-3 text-slate-600 dark:text-slate-400">{{ formatDate(doc.created_at) }}</td>
-              <td class="px-4 py-3">
+              <td v-if="isAdmin" class="px-4 py-3">
                 <button
                   @click="openDeleteModal(doc)"
                   class="cursor-pointer text-red-600 transition hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
@@ -60,6 +59,23 @@
                 </button>
               </td>
             </tr>
+            <!-- 展開內容 -->
+            <tr v-if="expandedTitle === doc.title" class="bg-slate-50 dark:bg-slate-800/50">
+              <td colspan="5" class="px-4 py-4">
+                <div v-if="chunksLoading" class="text-sm text-slate-500 dark:text-slate-400">載入中...</div>
+                <div v-else class="max-h-96 space-y-3 overflow-y-auto">
+                  <div
+                    v-for="chunk in chunks"
+                    :key="chunk.chunk_index"
+                    class="rounded border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900"
+                  >
+                    <div class="mb-1 text-xs font-medium text-slate-400 dark:text-slate-500">片段 {{ chunk.chunk_index + 1 }}</div>
+                    <p class="whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-300">{{ chunk.content }}</p>
+                  </div>
+                </div>
+              </td>
+            </tr>
+            </template>
           </tbody>
         </table>
       </div>
@@ -68,7 +84,7 @@
       <div v-if="totalPages > 1" class="mt-4 flex items-center justify-center gap-2">
         <button
           @click="goToPage(currentPage - 1)"
-          :disabled="currentPage <= 1"
+          :disabled="currentPage <= 1 || loading"
           class="cursor-pointer rounded border border-slate-300 px-3 py-1 text-sm transition
             hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50
             dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
@@ -80,7 +96,7 @@
         </span>
         <button
           @click="goToPage(currentPage + 1)"
-          :disabled="currentPage >= totalPages"
+          :disabled="currentPage >= totalPages || loading"
           class="cursor-pointer rounded border border-slate-300 px-3 py-1 text-sm transition
             hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50
             dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
@@ -135,10 +151,14 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useToast } from '@/composables/useToast'
+import { useAuthStore } from '@/stores/auth'
+import { storeToRefs } from 'pinia'
 import api from '@/services/api'
 import { Plus, BookOpen, Trash2 } from 'lucide-vue-next'
 import UploadKnowledgeModal from '@/components/knowledge/UploadKnowledgeModal.vue'
 
+const authStore = useAuthStore()
+const { isAdmin } = storeToRefs(authStore)
 const { showToast } = useToast()
 
 const loading = ref(true)
@@ -146,6 +166,9 @@ const submitting = ref(false)
 const documents = ref([])
 const showUploadModal = ref(false)
 const deleteTarget = ref(null)
+const expandedTitle = ref(null)
+const chunks = ref([])
+const chunksLoading = ref(false)
 const currentPage = ref(1)
 const totalPages = ref(0)
 
@@ -170,6 +193,23 @@ function goToPage(page) {
   if (page < 1 || page > totalPages.value) return
   currentPage.value = page
   loadDocuments()
+}
+
+async function toggleChunks(title) {
+  if (expandedTitle.value === title) {
+    expandedTitle.value = null
+    return
+  }
+  expandedTitle.value = title
+  chunksLoading.value = true
+  try {
+    chunks.value = await api.getKnowledgeChunks(title)
+  } catch (error) {
+    showToast(error.message || '載入內容失敗', 'error')
+    expandedTitle.value = null
+  } finally {
+    chunksLoading.value = false
+  }
 }
 
 function openDeleteModal(doc) {

@@ -14,41 +14,93 @@ def extract_text_from_pdf(file) -> str:
     return text.strip()
 
 
-def split_text_into_chunks(text: str, chunk_size: int = 500, overlap: int = 50) -> list[str]:
+def split_text_into_chunks(text: str, chunk_size: int = 500, overlap: int = 100) -> list[str]:
+    """
+    遞迴分段：依序嘗試用段落、換行、句號、逗號切分，
+    優先保留語意完整的段落結構。
+    """
+    separators = ["\n\n", "\n", "。", "！", "？", ".", "!", "?", "；", ";", "，", ",", " "]
+    return _recursive_split(text.strip(), separators, chunk_size, overlap)
+
+
+def _recursive_split(text: str, separators: list[str], chunk_size: int, overlap: int) -> list[str]:
+    if not text:
+        return []
     if len(text) <= chunk_size:
         return [text]
 
-    # 優先在換行、句號等位置斷開
-    separators = ["\n\n", "\n", "。", "！", "？", ".", "!", "?", "；", ";"]
+    # 找到第一個能切分文本的分隔符
+    chosen_sep = None
+    for sep in separators:
+        if sep in text:
+            chosen_sep = sep
+            break
 
+    # 沒有任何分隔符，硬切
+    if chosen_sep is None:
+        return _hard_split(text, chunk_size, overlap)
+
+    # 用該分隔符切分
+    parts = text.split(chosen_sep)
+
+    # 合併小段落，確保每個 chunk 盡量接近 chunk_size
+    chunks = []
+    current = ""
+    for part in parts:
+        part = part.strip()
+        if not part:
+            continue
+
+        candidate = f"{current}{chosen_sep}{part}" if current else part
+
+        if len(candidate) <= chunk_size:
+            current = candidate
+        else:
+            # 先保存當前累積的內容
+            if current:
+                chunks.append(current)
+            # 如果單個 part 超過 chunk_size，用下一層分隔符遞迴切分
+            if len(part) > chunk_size:
+                sub_chunks = _recursive_split(part, separators[separators.index(chosen_sep) + 1:], chunk_size, overlap)
+                chunks.extend(sub_chunks)
+                current = ""
+            else:
+                current = part
+
+    if current:
+        chunks.append(current)
+
+    # 加入 overlap：將前一個 chunk 的尾部加到下一個 chunk 的開頭
+    if overlap > 0 and len(chunks) > 1:
+        chunks = _add_overlap(chunks, overlap)
+
+    return chunks
+
+
+def _hard_split(text: str, chunk_size: int, overlap: int) -> list[str]:
+    """沒有分隔符時的硬切分。"""
     chunks = []
     start = 0
     while start < len(text):
-        end = start + chunk_size
-
-        if end >= len(text):
-            chunk = text[start:].strip()
-            if chunk:
-                chunks.append(chunk)
-            break
-
-        # 在 chunk_size 範圍內找最後一個分隔符
-        best_break = -1
-        for sep in separators:
-            pos = text.rfind(sep, start, end)
-            if pos > start and pos + len(sep) > best_break:
-                best_break = pos + len(sep)
-
-        if best_break > start:
-            end = best_break
-
+        end = min(start + chunk_size, len(text))
         chunk = text[start:end].strip()
         if chunk:
             chunks.append(chunk)
-
-        start = max(end - overlap, start + 1)
-
+        start = end - overlap if end < len(text) else end
     return chunks
+
+
+def _add_overlap(chunks: list[str], overlap: int) -> list[str]:
+    """在相鄰 chunk 之間加入重疊文字。"""
+    result = [chunks[0]]
+    for i in range(1, len(chunks)):
+        prev_tail = chunks[i - 1][-overlap:]
+        current = chunks[i]
+        if not current.startswith(prev_tail):
+            result.append(prev_tail + current)
+        else:
+            result.append(current)
+    return result
 
 
 def process_and_store(db: Session, title: str, text: str, filename: str | None = None) -> int:

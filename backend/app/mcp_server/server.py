@@ -362,6 +362,75 @@ def _format_value(value):
 
 
 
+# ============== 農場總覽工具 ==============
+
+@mcp.tool()
+def get_farms_overview() -> Dict[str, Any]:
+    """
+    取得所有農場的最新狀態總覽，包含每個農場最新一筆感測器數據和最近一筆農務記錄。
+    適合用於首頁總結、整體狀態分析。
+    """
+    db = get_db()
+    try:
+        farms = db.query(Farm).all()
+        if not farms:
+            return {"farms": [], "message": "目前沒有任何農場"}
+
+        result = []
+        for farm in farms:
+            # 最新感測器數據
+            latest_sensor = (
+                db.query(SensorData)
+                .filter(SensorData.farm_id == farm.id)
+                .order_by(SensorData.timestamp.desc())
+                .first()
+            )
+
+            # 最近農務記錄
+            latest_operation = (
+                db.query(Operation)
+                .filter(Operation.farm_id == farm.id)
+                .order_by(Operation.performed_at.desc())
+                .first()
+            )
+
+            farm_data = {
+                "id": farm.id,
+                "name": farm.name,
+                "location": farm.location,
+                "latest_sensor": None,
+                "latest_operation": None,
+            }
+
+            if latest_sensor:
+                farm_data["latest_sensor"] = {
+                    "timestamp": latest_sensor.timestamp.isoformat(),
+                    "temperature": latest_sensor.temperature,
+                    "humidity": latest_sensor.humidity,
+                    "precipitation": latest_sensor.precipitation,
+                    "sunshine_hours": latest_sensor.sunshine_hours,
+                    "soil_moisture": latest_sensor.soil_moisture,
+                    "soil_n": latest_sensor.soil_n,
+                    "soil_p": latest_sensor.soil_p,
+                    "soil_k": latest_sensor.soil_k,
+                }
+
+            if latest_operation:
+                farm_data["latest_operation"] = {
+                    "description": latest_operation.description,
+                    "performed_at": latest_operation.performed_at.isoformat(),
+                }
+
+            result.append(farm_data)
+
+        return {"farms": result, "total": len(result)}
+
+    except Exception as e:
+        return {"error": f"查詢失敗: {str(e)}"}
+    finally:
+        db.close()
+
+
 # ============== 氣象工具 ==============
 
 @mcp.tool()
@@ -456,6 +525,200 @@ def get_weather(location: str) -> Dict[str, Any]:
         return {"error": f"網路請求失敗: {str(e)}"}
     except Exception as e:
         return {"error": f"發生錯誤: {str(e)}"}
+
+@mcp.tool()
+def get_weather_forecast(location: str) -> Dict[str, Any]:
+    """
+    取得指定縣市未來一週天氣預報（資料來源：中央氣象署）。
+
+    與 get_weather（即時觀測）不同，此工具提供未來預報資料，適合用於農務規劃建議，
+    例如：是否適合灌溉、施肥、採收、是否需要防颱防寒等。
+
+    參數：
+    - location: 縣市名稱（必填），如「臺中市」「高雄市」「臺北市」「嘉義縣」
+
+    回傳：未來一週每 12 小時的天氣現象、溫度、降雨機率、濕度、風速等。
+    """
+    api_key = settings.CWA_API_KEY
+    if not api_key:
+        return {"error": "未設定中央氣象署 API Key"}
+
+    url = "https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-D0047-091"
+    params = {
+        "Authorization": api_key,
+        "format": "JSON",
+        "locationName": location,
+    }
+
+    try:
+        response = requests.get(url, params=params, timeout=15)
+        response.raise_for_status()
+        data = response.json()
+
+        if data.get("success") != "true":
+            return {"error": "API 請求失敗"}
+
+        locations_list = data.get("records", {}).get("Locations", [])
+        if not locations_list:
+            return {"error": f"找不到「{location}」的預報資料，請使用完整縣市名如「臺中市」"}
+
+        location_data = None
+        for loc_group in locations_list:
+            for loc in loc_group.get("Location", []):
+                if loc.get("LocationName") == location:
+                    location_data = loc
+                    break
+
+        if not location_data:
+            return {"error": f"找不到「{location}」的預報資料，請確認縣市名稱"}
+
+        # 解析各天氣要素
+        elements = {}
+        for elem in location_data.get("WeatherElement", []):
+            elements[elem["ElementName"]] = elem.get("Time", [])
+
+        # 組合預報時段
+        weather_times = elements.get("天氣現象", [])
+        forecasts = []
+        for i, t in enumerate(weather_times):
+            forecast = {
+                "開始時間": t.get("StartTime", ""),
+                "結束時間": t.get("EndTime", ""),
+                "天氣": t.get("ElementValue", [{}])[0].get("Weather", ""),
+            }
+
+            # 對應其他要素
+            def get_val(name, key, idx=i):
+                times = elements.get(name, [])
+                if idx < len(times):
+                    vals = times[idx].get("ElementValue", [{}])
+                    return vals[0].get(key, "") if vals else ""
+                return ""
+
+            forecast["平均溫度"] = get_val("平均溫度", "Temperature")
+            forecast["最高溫度"] = get_val("最高溫度", "MaxTemperature")
+            forecast["最低溫度"] = get_val("最低溫度", "MinTemperature")
+            forecast["降雨機率"] = get_val("降雨機率", "ProbabilityOfPrecipitation")
+            forecast["相對濕度"] = get_val("相對濕度", "RelativeHumidity")
+            forecast["風速"] = get_val("風速", "WindSpeed")
+            forecast["風向"] = get_val("風向", "WindDirection")
+
+            forecasts.append(forecast)
+
+        return {
+            "location": location,
+            "description": "未來一週逐12小時天氣預報",
+            "forecasts": forecasts,
+        }
+
+    except requests.exceptions.Timeout:
+        return {"error": "請求超時，請稍後再試"}
+    except requests.exceptions.RequestException as e:
+        return {"error": f"網路請求失敗: {str(e)}"}
+    except Exception as e:
+        return {"error": f"發生錯誤: {str(e)}"}
+
+
+# ============== 農產品價格工具 ==============
+
+@mcp.tool()
+def get_crop_price(
+    crop_name: str,
+    market: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    top: int = 20
+) -> Dict[str, Any]:
+    """
+    查詢農產品批發市場交易行情（資料來源：農業部開放資料）。
+
+    重要：作物名稱通常帶有品種，例如「小番茄-玉女」「香蕉」「釋迦-鳳梨釋迦」「高麗菜-改良種」。
+    如果不確定完整名稱，可以只輸入關鍵字（如「番茄」），工具會自動模糊比對所有包含該關鍵字的品種。
+
+    參數：
+    - crop_name: 作物名稱或關鍵字（必填），如「番茄」「高麗菜」「香蕉」「釋迦」「草莓」
+    - market: 市場名稱（選填），如「台北一」「台北二」「三重」「台中」「高雄」，不填則回傳所有市場
+    - start_date: 起始日期（選填），民國年格式如 "114.01.01"，不填則預設近四天
+    - end_date: 結束日期（選填），民國年格式如 "114.06.30"，不填則預設近四天
+    - top: 回傳筆數上限，預設 20
+
+    日期格式說明：使用民國年，如西元 2025 年 = 民國 114 年，寫作 "114.01.01"
+    西元年轉民國年：民國年 = 西元年 - 1911
+
+    回傳欄位：交易日期、市場名稱、作物名稱、上價、中價、下價、平均價（元/公斤）、交易量（公斤）
+
+    範例：
+    - get_crop_price(crop_name="番茄") — 模糊搜尋所有番茄品種
+    - get_crop_price(crop_name="高麗菜", market="台北一") — 指定市場
+    - get_crop_price(crop_name="香蕉", start_date="114.01.01", end_date="114.01.31") — 查歷史價格
+    """
+    try:
+        url = "https://data.moa.gov.tw/Service/OpenData/FromM/FarmTransData.aspx"
+
+        # 先嘗試精確查詢
+        params = {"CropName": crop_name, "$top": top}
+        if market:
+            params["MarketName"] = market
+        if start_date:
+            params["StartDate"] = start_date
+        if end_date:
+            params["EndDate"] = end_date
+
+        resp = requests.get(url, params=params, timeout=10)
+        resp.raise_for_status()
+        data = resp.json()
+
+        # 過濾休市資料
+        results = [item for item in data if item.get("作物代號") != "rest"]
+
+        # 精確查詢無結果時，改用模糊搜尋（不帶 CropName，抓大量資料後過濾）
+        if not results:
+            fuzzy_params = {"$top": 2000}
+            if market:
+                fuzzy_params["MarketName"] = market
+            if start_date:
+                fuzzy_params["StartDate"] = start_date
+            if end_date:
+                fuzzy_params["EndDate"] = end_date
+
+            resp = requests.get(url, params=fuzzy_params, timeout=15)
+            resp.raise_for_status()
+            all_data = resp.json()
+
+            results = [
+                item for item in all_data
+                if item.get("作物代號") != "rest" and crop_name in item.get("作物名稱", "")
+            ][:top]
+
+        if not results:
+            return {"message": f"查無包含「{crop_name}」的交易資料，可能今日休市或請換個關鍵字", "results": []}
+
+        formatted = []
+        for item in results:
+            formatted.append({
+                "交易日期": item.get("交易日期", ""),
+                "市場名稱": item.get("市場名稱", ""),
+                "作物名稱": item.get("作物名稱", ""),
+                "平均價": item.get("平均價", 0),
+                "上價": item.get("上價", 0),
+                "中價": item.get("中價", 0),
+                "下價": item.get("下價", 0),
+                "交易量": item.get("交易量", 0),
+            })
+
+        return {
+            "crop": crop_name,
+            "count": len(formatted),
+            "results": formatted,
+        }
+
+    except requests.exceptions.Timeout:
+        return {"error": "請求超時，請稍後再試"}
+    except requests.exceptions.RequestException as e:
+        return {"error": f"網路請求失敗: {str(e)}"}
+    except Exception as e:
+        return {"error": f"查詢失敗: {str(e)}"}
+
 
 # ============== 知識庫搜尋工具 ==============
 

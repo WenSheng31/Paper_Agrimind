@@ -13,6 +13,8 @@ from sqlalchemy import create_engine, func, and_, or_, desc, asc
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
 from app.models.agriculture import Farm, SensorData, Operation
+from app.models.knowledge import KnowledgeDocument
+from app.services.embedding import get_embedding
 from app.core.config import settings
 
 load_dotenv()
@@ -531,6 +533,57 @@ def get_weather(location: str) -> Dict[str, Any]:
         return {"error": f"網路請求失敗: {str(e)}"}
     except Exception as e:
         return {"error": f"發生錯誤: {str(e)}"}
+
+# ============== 知識庫搜尋工具 ==============
+
+@mcp.tool()
+def search_knowledge(query: str, top_k: int = 5) -> Dict[str, Any]:
+    """
+    搜尋知識庫，根據語意找出最相關的農業知識文件。
+
+    當使用者詢問農業知識、種植技術、病蟲害防治、肥料使用等問題時，
+    使用此工具從知識庫中搜尋相關資訊來輔助回答。
+
+    參數：
+    - query: 搜尋關鍵詞或問題描述
+    - top_k: 返回最相關的文件數量，預設 5
+
+    範例：
+    - search_knowledge(query="番茄病蟲害防治")
+    - search_knowledge(query="有機肥料施用方法", top_k=3)
+    """
+    db = get_db()
+    try:
+        # 檢查知識庫是否有資料
+        count = db.query(KnowledgeDocument).count()
+        if count == 0:
+            return {"message": "知識庫目前沒有資料", "results": []}
+
+        query_embedding = get_embedding(query)
+        results = (
+            db.query(KnowledgeDocument)
+            .order_by(KnowledgeDocument.embedding.cosine_distance(query_embedding))
+            .limit(top_k)
+            .all()
+        )
+
+        return {
+            "query": query,
+            "count": len(results),
+            "results": [
+                {
+                    "title": r.title,
+                    "content": r.content,
+                    "source": r.source_filename,
+                }
+                for r in results
+            ],
+        }
+    except Exception as e:
+        return {"error": f"搜尋知識庫失敗: {str(e)}"}
+    finally:
+        db.close()
+
 
 if __name__ == "__main__":
     mcp.run()

@@ -147,6 +147,41 @@ class ApiService {
       method: 'DELETE',
     })
   }
+
+  // ===== Knowledge API =====
+  async getKnowledgeDocuments(page = 1, pageSize = 10) {
+    return this.request(`/api/knowledge/?page=${page}&page_size=${pageSize}`)
+  }
+
+  async uploadKnowledgeText(title, content) {
+    return this.request('/api/knowledge/upload/text', {
+      method: 'POST',
+      body: JSON.stringify({ title, content }),
+    })
+  }
+
+  async uploadKnowledgePdf(title, file) {
+    const formData = new FormData()
+    formData.append('title', title)
+    formData.append('file', file)
+    const url = `${this.baseURL}/api/knowledge/upload/pdf`
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: this.getAuthHeader(),
+      body: formData,
+    })
+    const data = await response.json().catch(() => null)
+    if (!response.ok) {
+      throw { status: response.status, message: data?.detail || '上傳失敗' }
+    }
+    return data
+  }
+
+  async deleteKnowledge(title) {
+    return this.request(`/api/knowledge/${encodeURIComponent(title)}`, {
+      method: 'DELETE',
+    })
+  }
 }
 
 // ===== AI API =====

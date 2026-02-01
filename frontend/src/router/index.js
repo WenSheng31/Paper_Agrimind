@@ -43,6 +43,11 @@ const router = createRouter({
           name: 'farm-detail',
           component: () => import('@/views/FarmDetail.vue'),
         },
+        {
+          path: 'knowledge',
+          name: 'knowledge',
+          component: () => import('@/views/Knowledge.vue'),
+        },
       ],
     },
 

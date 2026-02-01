@@ -50,6 +50,20 @@
             <span>農場管理</span>
           </router-link>
         </li>
+
+        <li>
+          <router-link
+            to="/knowledge"
+            @click="$emit('close')"
+            class="flex cursor-pointer items-center gap-3 rounded p-3 text-slate-700 transition
+              hover:bg-emerald-50 hover:text-emerald-700 dark:text-slate-300
+              dark:hover:bg-emerald-900/30 dark:hover:text-emerald-400"
+            active-class="bg-emerald-50 text-emerald-700 font-medium dark:bg-emerald-900/30 dark:text-emerald-400"
+          >
+            <BookOpen :size="20" />
+            <span>知識庫</span>
+          </router-link>
+        </li>
       </ul>
     </nav>
 
@@ -101,7 +115,7 @@ import { computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { Home, Tractor, LogOut, Leaf, Sun, Moon, Laptop } from 'lucide-vue-next'
+import { Home, Tractor, LogOut, Leaf, Sun, Moon, Laptop, BookOpen } from 'lucide-vue-next'
 import { useTheme } from '@/composables/useTheme'
 
 defineProps({

@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .core.config import settings
 from .core.init_db import init_db
-from .api import auth, admin, agriculture, ai
+from .api import auth, admin, agriculture, ai, knowledge
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -30,6 +30,7 @@ app.include_router(auth.router)
 app.include_router(admin.router)
 app.include_router(agriculture.router)
 app.include_router(ai.router)
+app.include_router(knowledge.router)
 
 @app.get("/")
 def root():

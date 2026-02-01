@@ -15,3 +15,6 @@ python-dotenv
 anthropic
 fastmcp
 mcp
+pgvector
+sentence-transformers
+PyPDF2

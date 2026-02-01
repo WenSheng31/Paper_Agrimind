@@ -1,11 +1,18 @@
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 from .database import engine, Base, SessionLocal
 from ..models.user import User
+from ..models.knowledge import KnowledgeDocument
 from .security import get_password_hash
 
 
 def init_db():
     """初始化資料庫：建立資料表並預設管理員"""
+    # 0. 啟用 pgvector 擴充
+    with engine.connect() as conn:
+        conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+        conn.commit()
+
     # 1. 建立所有資料表
     Base.metadata.create_all(bind=engine)
     

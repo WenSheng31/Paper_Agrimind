@@ -9,10 +9,10 @@ RUN apt-get update && apt-get install -y \
 
 COPY requirements.txt .
 
-# 安裝到 /install 方便複製
-RUN pip install --no-cache-dir --prefix=/install \
-    torch --index-url https://download.pytorch.org/whl/cpu && \
-    pip install --no-cache-dir --prefix=/install -r requirements.txt
+# 先裝 CPU 版 PyTorch，再裝其餘依賴（避免拉到 GPU 版）
+RUN pip install --no-cache-dir \
+    torch --index-url https://download.pytorch.org/whl/cpu \
+    && pip install --no-cache-dir -r requirements.txt
 
 # ===== Stage 2: 最終映像 =====
 FROM python:3.12-slim
@@ -24,7 +24,8 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # 從 builder 複製已安裝的套件
-COPY --from=builder /install /usr/local
+COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
 
 # 複製應用程式代碼
 COPY . .

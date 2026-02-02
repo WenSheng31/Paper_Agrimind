@@ -32,7 +32,7 @@ class ApiService {
 
         throw {
           status: response.status,
-          message: data?.detail || '請求失敗',
+          message: response.status === 401 ? '登入已過期，請重新登入' : (data?.detail || '請求失敗'),
           data,
         }
       }
@@ -69,6 +69,12 @@ class ApiService {
 
   async getDashboardStats() {
     return this.request('/api/agriculture/dashboard/stats')
+  }
+
+  async getChartData(farmId = null, days = 7) {
+    const params = new URLSearchParams({ days })
+    if (farmId) params.append('farm_id', farmId)
+    return this.request(`/api/agriculture/dashboard/chart-data?${params}`)
   }
 
   // ===== Farm API =====

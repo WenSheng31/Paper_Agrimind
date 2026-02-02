@@ -7,6 +7,33 @@ class DashboardStats(BaseModel):
     total_sensor_data: int
     total_operations: int
 
+class TimeSeriesItem(BaseModel):
+    date: str
+    farm_id: int
+    farm_name: str
+    avg_temperature: Optional[float] = None
+    avg_humidity: Optional[float] = None
+    total_precipitation: Optional[float] = None
+    avg_sunshine_hours: Optional[float] = None
+    avg_soil_moisture: Optional[float] = None
+    avg_soil_n: Optional[float] = None
+    avg_soil_p: Optional[float] = None
+    avg_soil_k: Optional[float] = None
+
+class FarmLatest(BaseModel):
+    farm_id: int
+    farm_name: str
+    temperature: Optional[float] = None
+    humidity: Optional[float] = None
+    soil_moisture: Optional[float] = None
+    soil_n: Optional[float] = None
+    soil_p: Optional[float] = None
+    soil_k: Optional[float] = None
+
+class ChartDataResponse(BaseModel):
+    time_series: List[TimeSeriesItem]
+    latest_per_farm: List[FarmLatest]
+
 # --- 分頁響應 ---
 T = TypeVar('T')
 

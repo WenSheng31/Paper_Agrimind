@@ -99,7 +99,7 @@ class MCPClient:
         while True:
             response = self.anthropic.messages.create(
                 model=ANTHROPIC_MODEL,
-                max_tokens=1000,
+                max_tokens=4096,
                 system="請使用繁體中文回答用戶問題",
                 messages=conversation_history,
                 tools=available_tools
@@ -174,7 +174,9 @@ async def query_ai(request: QueryRequest, _user=Depends(get_current_user)):
         response, tool_usages = await mcp_client.process_query(request.query, request.session_id)
         return QueryResponse(response=response, session_id=request.session_id, tool_used=tool_usages)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import logging
+        logging.getLogger(__name__).error(f"AI query failed: {e}")
+        raise HTTPException(status_code=500, detail="AI 查詢失敗，請稍後再試")
 
 
 @router.get("/tools", response_model=ToolsResponse)
@@ -184,4 +186,6 @@ async def get_tools(_user=Depends(get_current_user)):
         tools = await mcp_client.get_tools()
         return ToolsResponse(tools=tools)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import logging
+        logging.getLogger(__name__).error(f"Get tools failed: {e}")
+        raise HTTPException(status_code=500, detail="無法取得工具列表")

@@ -1,12 +1,16 @@
+import threading
 from sentence_transformers import SentenceTransformer
 
 _model = None
+_lock = threading.Lock()
 
 
 def _get_model():
     global _model
     if _model is None:
-        _model = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
+        with _lock:
+            if _model is None:
+                _model = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
     return _model
 
 

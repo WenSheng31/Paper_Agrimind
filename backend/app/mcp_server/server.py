@@ -2,15 +2,16 @@ import sys
 import os
 import json
 import requests
+from contextlib import contextmanager
 from datetime import datetime, timedelta
-from typing import Dict, Any, Optional, List, Union
+from typing import Dict, Any, Optional, List
 
 # 將專案根目錄加入 Python 路徑
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from fastmcp import FastMCP
-from sqlalchemy import create_engine, func, and_, or_, desc, asc
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine, func, and_, desc, asc
+from sqlalchemy.orm import sessionmaker, aliased
 from dotenv import load_dotenv
 from app.models.agriculture import Farm, SensorData, Operation
 from app.models.knowledge import KnowledgeDocument
@@ -26,38 +27,37 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+
+@contextmanager
 def get_db():
-    """獲取資料庫連接"""
-    return SessionLocal()
+    """取得資料庫 session，確保使用後自動關閉"""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
 # ============== 白名單配置 ==============
 
-# 允許查詢的表和對應的模型
 TABLE_MODELS = {
     "farms": Farm,
     "sensor_data": SensorData,
     "operations": Operation,
 }
 
-# 允許查詢的欄位（每個表）
 ALLOWED_FIELDS = {
     "farms": {"id", "name", "location", "description", "created_at"},
     "sensor_data": {
         "id", "farm_id", "timestamp",
         "temperature", "humidity", "precipitation", "sunshine_hours",
-        "soil_moisture", "soil_n", "soil_p", "soil_k"
+        "soil_moisture", "soil_n", "soil_p", "soil_k",
     },
     "operations": {"id", "farm_id", "user_id", "description", "performed_at"},
 }
 
-# 允許的篩選操作符
 ALLOWED_OPS = {"=", ">", "<", ">=", "<=", "!=", "like"}
-
-# 允許的聚合函數
 ALLOWED_FUNCS = {"avg", "sum", "max", "min", "count"}
-
-# 最大返回筆數
 MAX_LIMIT = 500
 
 
@@ -79,7 +79,7 @@ def get_current_time() -> Dict[str, Any]:
         "month": now.month,
         "day": now.day,
         "weekday": now.strftime("%A"),
-        "week_number": now.isocalendar()[1]
+        "week_number": now.isocalendar()[1],
     }
 
 
@@ -101,8 +101,8 @@ def get_database_schema() -> Dict[str, Any]:
                     "name": "農場名稱",
                     "location": "農場位置",
                     "description": "農場描述",
-                    "created_at": "建立時間"
-                }
+                    "created_at": "建立時間",
+                },
             },
             "sensor_data": {
                 "description": "感測器資料（每小時記錄一筆）",
@@ -117,8 +117,8 @@ def get_database_schema() -> Dict[str, Any]:
                     "soil_moisture": "土壤濕度 (%)",
                     "soil_n": "土壤氮含量 (mg/kg)",
                     "soil_p": "土壤磷含量 (mg/kg)",
-                    "soil_k": "土壤鉀含量 (mg/kg)"
-                }
+                    "soil_k": "土壤鉀含量 (mg/kg)",
+                },
             },
             "operations": {
                 "description": "農場操作記錄",
@@ -127,15 +127,15 @@ def get_database_schema() -> Dict[str, Any]:
                     "farm_id": "所屬農場 ID",
                     "user_id": "操作人員 ID",
                     "description": "操作內容",
-                    "performed_at": "操作時間"
-                }
-            }
+                    "performed_at": "操作時間",
+                },
+            },
         },
         "notes": [
             "sensor_data 每小時記錄一筆，查詢大範圍時建議使用 aggregation 聚合",
             "可用聚合函數: avg, sum, max, min, count",
-            "可用時間分組: hour, day, week, month"
-        ]
+            "可用時間分組: hour, day, week, month",
+        ],
     }
 
 
@@ -148,7 +148,7 @@ def query_database(
     group_by: Optional[str] = None,
     order_by: Optional[str] = None,
     order_dir: str = "desc",
-    limit: int = 100
+    limit: int = 100,
 ) -> Dict[str, Any]:
     """
     通用資料庫查詢工具，可查詢農場、感測器資料、操作記錄等。
@@ -177,114 +177,110 @@ def query_database(
     - order_dir: 排序方向，"asc" 或 "desc"（預設）
     - limit: 返回筆數上限，預設 100，最大 500
     """
-    db = get_db()
+    # 驗證表名
+    if table not in TABLE_MODELS:
+        return {"error": f"不允許的資料表: {table}，可用: {list(TABLE_MODELS.keys())}"}
 
-    try:
-        # 驗證表名
-        if table not in TABLE_MODELS:
-            return {"error": f"不允許的資料表: {table}，可用: {list(TABLE_MODELS.keys())}"}
+    model = TABLE_MODELS[table]
+    allowed_fields = ALLOWED_FIELDS[table]
 
-        model = TABLE_MODELS[table]
-        allowed_fields = ALLOWED_FIELDS[table]
+    # 驗證並過濾欄位
+    if fields:
+        fields = [f for f in fields if f in allowed_fields]
+        if not fields:
+            return {"error": f"沒有有效的欄位，可用欄位: {sorted(allowed_fields)}"}
+    else:
+        fields = sorted(allowed_fields)
 
-        # 驗證並過濾欄位
-        if fields:
-            fields = [f for f in fields if f in allowed_fields]
-            if not fields:
-                return {"error": f"沒有有效的欄位，可用欄位: {allowed_fields}"}
-        else:
-            fields = list(allowed_fields)
+    limit = min(limit, MAX_LIMIT)
 
-        # 限制筆數
-        limit = min(limit, MAX_LIMIT)
+    with get_db() as db:
+        try:
+            # 處理聚合查詢
+            if aggregation:
+                return _handle_aggregation(
+                    db, model, table, aggregation, filters,
+                    allowed_fields, group_by, order_dir, limit,
+                )
 
-        # 處理聚合查詢
-        if aggregation:
-            agg_field = aggregation.get("field")
-            agg_func = aggregation.get("func", "").lower()
+            # 一般查詢
+            columns = [getattr(model, f) for f in fields if hasattr(model, f)]
+            if not columns:
+                return {"error": "沒有有效的查詢欄位"}
 
-            if agg_field not in allowed_fields:
-                return {"error": f"不允許的聚合欄位: {agg_field}"}
-            if agg_func not in ALLOWED_FUNCS:
-                return {"error": f"不允許的聚合函數: {agg_func}，可用: {ALLOWED_FUNCS}"}
+            query = db.query(*columns)
+            query = _apply_filters(query, model, filters, allowed_fields)
 
-            column = getattr(model, agg_field)
+            # 排序
+            if order_by and order_by in allowed_fields and hasattr(model, order_by):
+                order_column = getattr(model, order_by)
+                query = query.order_by(asc(order_column) if order_dir == "asc" else desc(order_column))
 
-            # 選擇聚合函數
-            if agg_func == "avg":
-                agg_column = func.avg(column)
-            elif agg_func == "sum":
-                agg_column = func.sum(column)
-            elif agg_func == "max":
-                agg_column = func.max(column)
-            elif agg_func == "min":
-                agg_column = func.min(column)
-            elif agg_func == "count":
-                agg_column = func.count(column)
+            results = query.limit(limit).all()
 
-            # 處理分組
-            if group_by:
-                group_column = _get_group_column(model, group_by, table)
-                if group_column is None:
-                    return {"error": f"不允許的分組方式: {group_by}"}
+            return {
+                "table": table,
+                "count": len(results),
+                "results": [
+                    {fields[i]: _format_value(v) for i, v in enumerate(row)}
+                    for row in results
+                ],
+            }
 
-                query = db.query(group_column.label("group"), agg_column.label("value"))
-                query = _apply_filters(query, model, filters, allowed_fields)
-                query = query.group_by(group_column)
+        except Exception as e:
+            return {"error": f"查詢失敗: {str(e)}"}
 
-                if order_dir == "asc":
-                    query = query.order_by(asc("value"))
-                else:
-                    query = query.order_by(desc("value"))
 
-                results = query.limit(limit).all()
-                return {
-                    "aggregation": f"{agg_func}({agg_field})",
-                    "group_by": group_by,
-                    "results": [{"group": _format_value(r.group), "value": round(r.value, 2) if r.value else None} for r in results]
-                }
-            else:
-                # 無分組的聚合
-                query = db.query(agg_column.label("value"))
-                query = _apply_filters(query, model, filters, allowed_fields)
-                result = query.first()
-                return {
-                    "aggregation": f"{agg_func}({agg_field})",
-                    "value": round(result.value, 2) if result and result.value else None
-                }
+def _handle_aggregation(db, model, table, aggregation, filters, allowed_fields, group_by, order_dir, limit):
+    """處理聚合查詢"""
+    agg_field = aggregation.get("field")
+    agg_func = aggregation.get("func", "").lower()
 
-        # 一般查詢
-        columns = [getattr(model, f) for f in fields if hasattr(model, f)]
-        query = db.query(*columns)
+    if agg_field not in allowed_fields:
+        return {"error": f"不允許的聚合欄位: {agg_field}，可用: {sorted(allowed_fields)}"}
+    if agg_func not in ALLOWED_FUNCS:
+        return {"error": f"不允許的聚合函數: {agg_func}，可用: {sorted(ALLOWED_FUNCS)}"}
+    if not hasattr(model, agg_field):
+        return {"error": f"欄位不存在: {agg_field}"}
 
-        # 應用篩選
+    column = getattr(model, agg_field)
+
+    agg_map = {
+        "avg": func.avg, "sum": func.sum, "max": func.max,
+        "min": func.min, "count": func.count,
+    }
+    agg_column = agg_map[agg_func](column)
+
+    if group_by:
+        group_column = _get_group_column(model, group_by, table)
+        if group_column is None:
+            return {"error": f"不允許的分組方式: {group_by}"}
+
+        query = db.query(group_column.label("group"), agg_column.label("value"))
         query = _apply_filters(query, model, filters, allowed_fields)
+        query = query.group_by(group_column)
+        query = query.order_by(asc("group") if order_dir == "asc" else desc("group"))
 
-        # 排序
-        if order_by and order_by in allowed_fields:
-            order_column = getattr(model, order_by)
-            if order_dir == "asc":
-                query = query.order_by(asc(order_column))
-            else:
-                query = query.order_by(desc(order_column))
-
-        # 執行查詢
         results = query.limit(limit).all()
-
-        # 格式化結果
         return {
-            "table": table,
-            "count": len(results),
+            "aggregation": f"{agg_func}({agg_field})",
+            "group_by": group_by,
             "results": [
-                {fields[i]: _format_value(v) for i, v in enumerate(row)}
-                for row in results
-            ]
+                {
+                    "group": _format_value(r.group),
+                    "value": round(float(r.value), 2) if r.value is not None else None,
+                }
+                for r in results
+            ],
         }
-
-    except Exception as e:
-        return {"error": f"查詢失敗: {str(e)}"}
-    finally:
-        db.close()
+    else:
+        query = db.query(agg_column.label("value"))
+        query = _apply_filters(query, model, filters, allowed_fields)
+        result = query.first()
+        return {
+            "aggregation": f"{agg_func}({agg_field})",
+            "value": round(float(result.value), 2) if result and result.value is not None else None,
+        }
 
 
 def _apply_filters(query, model, filters: Optional[List[Dict]], allowed_fields: set):
@@ -298,9 +294,7 @@ def _apply_filters(query, model, filters: Optional[List[Dict]], allowed_fields: 
         op = f.get("op", "=")
         value = f.get("value")
 
-        if field not in allowed_fields:
-            continue
-        if op not in ALLOWED_OPS:
+        if field not in allowed_fields or op not in ALLOWED_OPS:
             continue
 
         column = getattr(model, field, None)
@@ -320,7 +314,9 @@ def _apply_filters(query, model, filters: Optional[List[Dict]], allowed_fields: 
         elif op == "!=":
             conditions.append(column != value)
         elif op == "like":
-            conditions.append(column.like(f"%{value}%"))
+            # 跳脫使用者輸入中的 SQL wildcard 字元，避免非預期的模糊匹配
+            safe_value = str(value).replace("%", r"\%").replace("_", r"\_")
+            conditions.append(column.like(f"%{safe_value}%", escape="\\"))
 
     if conditions:
         query = query.filter(and_(*conditions))
@@ -330,7 +326,6 @@ def _apply_filters(query, model, filters: Optional[List[Dict]], allowed_fields: 
 
 def _get_group_column(model, group_by: str, table: str):
     """獲取分組欄位"""
-    # 時間分組（僅適用於有時間欄位的表）
     time_field = None
     if table == "sensor_data" and hasattr(model, "timestamp"):
         time_field = model.timestamp
@@ -339,15 +334,15 @@ def _get_group_column(model, group_by: str, table: str):
     elif table == "farms" and hasattr(model, "created_at"):
         time_field = model.created_at
 
-    # 使用 to_char 並指定時區，避免 UTC 轉換問題
-    if group_by == "hour" and time_field is not None:
-        return func.to_char(time_field, "YYYY-MM-DD HH24:00")
-    elif group_by == "day" and time_field is not None:
-        return func.to_char(time_field, "YYYY-MM-DD")
-    elif group_by == "week" and time_field is not None:
-        return func.to_char(time_field, "IYYY-IW")  # ISO 年-週
-    elif group_by == "month" and time_field is not None:
-        return func.to_char(time_field, "YYYY-MM")
+    time_formats = {
+        "hour": "YYYY-MM-DD HH24",
+        "day": "YYYY-MM-DD",
+        "week": "IYYY-IW",
+        "month": "YYYY-MM",
+    }
+
+    if group_by in time_formats and time_field is not None:
+        return func.to_char(time_field, time_formats[group_by])
     elif group_by in ALLOWED_FIELDS.get(table, set()):
         return getattr(model, group_by, None)
 
@@ -361,7 +356,6 @@ def _format_value(value):
     return value
 
 
-
 # ============== 農場總覽工具 ==============
 
 @mcp.tool()
@@ -370,65 +364,131 @@ def get_farms_overview() -> Dict[str, Any]:
     取得所有農場的最新狀態總覽，包含每個農場最新一筆感測器數據和最近一筆農務記錄。
     適合用於首頁總結、整體狀態分析。
     """
-    db = get_db()
-    try:
-        farms = db.query(Farm).all()
-        if not farms:
-            return {"farms": [], "message": "目前沒有任何農場"}
+    with get_db() as db:
+        try:
+            farms = db.query(Farm).all()
+            if not farms:
+                return {"farms": [], "message": "目前沒有任何農場"}
 
-        result = []
-        for farm in farms:
-            # 最新感測器數據
-            latest_sensor = (
+            farm_ids = [f.id for f in farms]
+
+            # 子查詢：每個農場最新的 sensor_data timestamp
+            latest_sensor_sub = (
+                db.query(
+                    SensorData.farm_id,
+                    func.max(SensorData.timestamp).label("max_ts"),
+                )
+                .filter(SensorData.farm_id.in_(farm_ids))
+                .group_by(SensorData.farm_id)
+                .subquery()
+            )
+
+            latest_sensors = (
                 db.query(SensorData)
-                .filter(SensorData.farm_id == farm.id)
-                .order_by(SensorData.timestamp.desc())
-                .first()
+                .join(
+                    latest_sensor_sub,
+                    and_(
+                        SensorData.farm_id == latest_sensor_sub.c.farm_id,
+                        SensorData.timestamp == latest_sensor_sub.c.max_ts,
+                    ),
+                )
+                .all()
+            )
+            sensor_map = {s.farm_id: s for s in latest_sensors}
+
+            # 子查詢：每個農場最新的 operation
+            latest_op_sub = (
+                db.query(
+                    Operation.farm_id,
+                    func.max(Operation.performed_at).label("max_ts"),
+                )
+                .filter(Operation.farm_id.in_(farm_ids))
+                .group_by(Operation.farm_id)
+                .subquery()
             )
 
-            # 最近農務記錄
-            latest_operation = (
+            latest_operations = (
                 db.query(Operation)
-                .filter(Operation.farm_id == farm.id)
-                .order_by(Operation.performed_at.desc())
-                .first()
+                .join(
+                    latest_op_sub,
+                    and_(
+                        Operation.farm_id == latest_op_sub.c.farm_id,
+                        Operation.performed_at == latest_op_sub.c.max_ts,
+                    ),
+                )
+                .all()
             )
+            op_map = {o.farm_id: o for o in latest_operations}
 
-            farm_data = {
-                "id": farm.id,
-                "name": farm.name,
-                "location": farm.location,
-                "latest_sensor": None,
-                "latest_operation": None,
-            }
-
-            if latest_sensor:
-                farm_data["latest_sensor"] = {
-                    "timestamp": latest_sensor.timestamp.isoformat(),
-                    "temperature": latest_sensor.temperature,
-                    "humidity": latest_sensor.humidity,
-                    "precipitation": latest_sensor.precipitation,
-                    "sunshine_hours": latest_sensor.sunshine_hours,
-                    "soil_moisture": latest_sensor.soil_moisture,
-                    "soil_n": latest_sensor.soil_n,
-                    "soil_p": latest_sensor.soil_p,
-                    "soil_k": latest_sensor.soil_k,
+            result = []
+            for farm in farms:
+                farm_data = {
+                    "id": farm.id,
+                    "name": farm.name,
+                    "location": farm.location,
+                    "latest_sensor": None,
+                    "latest_operation": None,
                 }
 
-            if latest_operation:
-                farm_data["latest_operation"] = {
-                    "description": latest_operation.description,
-                    "performed_at": latest_operation.performed_at.isoformat(),
-                }
+                sensor = sensor_map.get(farm.id)
+                if sensor:
+                    farm_data["latest_sensor"] = {
+                        "timestamp": sensor.timestamp.isoformat(),
+                        "temperature": sensor.temperature,
+                        "humidity": sensor.humidity,
+                        "precipitation": sensor.precipitation,
+                        "sunshine_hours": sensor.sunshine_hours,
+                        "soil_moisture": sensor.soil_moisture,
+                        "soil_n": sensor.soil_n,
+                        "soil_p": sensor.soil_p,
+                        "soil_k": sensor.soil_k,
+                    }
 
-            result.append(farm_data)
+                op = op_map.get(farm.id)
+                if op:
+                    farm_data["latest_operation"] = {
+                        "description": op.description,
+                        "performed_at": op.performed_at.isoformat(),
+                    }
 
-        return {"farms": result, "total": len(result)}
+                result.append(farm_data)
 
-    except Exception as e:
-        return {"error": f"查詢失敗: {str(e)}"}
-    finally:
-        db.close()
+            return {"farms": result, "total": len(result)}
+
+        except Exception as e:
+            return {"error": f"查詢失敗: {str(e)}"}
+
+
+# ============== 共用：地點名稱正規化 ==============
+
+def _normalize_location(location: str) -> str:
+    """正規化地點名稱：去空白、台→臺"""
+    return location.strip().replace("台", "臺")
+
+
+# 縣市對應氣象站
+WEATHER_STATIONS = {
+    "基隆市": "基隆", "基隆": "基隆",
+    "臺北市": "臺北", "臺北": "臺北",
+    "新北市": "板橋", "新北": "板橋", "板橋": "板橋",
+    "桃園市": "桃園", "桃園": "桃園",
+    "新竹市": "新竹", "新竹縣": "竹東", "新竹": "新竹",
+    "苗栗縣": "苗栗", "苗栗": "苗栗",
+    "臺中市": "臺中", "臺中": "臺中",
+    "彰化縣": "員林", "彰化": "員林",
+    "南投縣": "南投", "南投": "南投",
+    "雲林縣": "斗六", "雲林": "斗六",
+    "嘉義市": "嘉義", "嘉義縣": "朴子", "嘉義": "嘉義",
+    "臺南市": "臺南", "臺南": "臺南",
+    "高雄市": "高雄", "高雄": "高雄",
+    "屏東縣": "潮州", "屏東": "潮州",
+    "宜蘭縣": "宜蘭", "宜蘭": "宜蘭",
+    "花蓮縣": "花蓮", "花蓮": "花蓮",
+    "臺東縣": "臺東", "臺東": "臺東",
+    "澎湖縣": "澎湖", "澎湖": "澎湖",
+    "金門縣": "金門", "金門": "金門",
+    "連江縣": "馬祖", "馬祖": "馬祖",
+}
 
 
 # ============== 氣象工具 ==============
@@ -446,33 +506,7 @@ def get_weather(location: str) -> Dict[str, Any]:
     if not location or not location.strip():
         return {"error": "請提供地點名稱，例如：臺中市、臺北、高雄"}
 
-    location = location.strip().replace("台", "臺")
-
-    # 縣市對應氣象站
-    WEATHER_STATIONS = {
-        "基隆市": "基隆", "基隆": "基隆",
-        "臺北市": "臺北", "臺北": "臺北", "台北市": "臺北", "台北": "臺北",
-        "新北市": "板橋", "新北": "板橋", "板橋": "板橋",
-        "桃園市": "桃園", "桃園": "桃園",
-        "新竹市": "新竹", "新竹縣": "竹東", "新竹": "新竹",
-        "苗栗縣": "苗栗", "苗栗": "苗栗",
-        "臺中市": "臺中", "臺中": "臺中", "台中市": "臺中", "台中": "臺中",
-        "彰化縣": "員林", "彰化": "員林",
-        "南投縣": "南投", "南投": "南投",
-        "雲林縣": "斗六", "雲林": "斗六",
-        "嘉義市": "嘉義", "嘉義縣": "朴子", "嘉義": "嘉義",
-        "臺南市": "臺南", "臺南": "臺南", "台南市": "臺南", "台南": "臺南",
-        "高雄市": "高雄", "高雄": "高雄",
-        "屏東縣": "潮州", "屏東": "潮州",
-        "宜蘭縣": "宜蘭", "宜蘭": "宜蘭",
-        "花蓮縣": "花蓮", "花蓮": "花蓮",
-        "臺東縣": "臺東", "臺東": "臺東", "台東縣": "臺東", "台東": "臺東",
-        "澎湖縣": "澎湖", "澎湖": "澎湖",
-        "金門縣": "金門", "金門": "金門",
-        "連江縣": "馬祖", "馬祖": "馬祖",
-    }
-
-    # 查找對應的氣象站
+    location = _normalize_location(location)
     station_name = WEATHER_STATIONS.get(location, location)
 
     api_key = settings.CWA_API_KEY
@@ -483,7 +517,7 @@ def get_weather(location: str) -> Dict[str, Any]:
     params = {
         "Authorization": api_key,
         "format": "JSON",
-        "StationName": station_name
+        "StationName": station_name,
     }
 
     try:
@@ -498,7 +532,7 @@ def get_weather(location: str) -> Dict[str, Any]:
         stations = records.get("Station", []) if isinstance(records, dict) else []
 
         if not stations:
-            return {"error": f"找不到氣象站: {station_name}"}
+            return {"error": f"找不到氣象站: {station_name}，請確認地點名稱"}
 
         station = stations[0]
         obs = station.get("WeatherElement", {}) or {}
@@ -526,6 +560,7 @@ def get_weather(location: str) -> Dict[str, Any]:
     except Exception as e:
         return {"error": f"發生錯誤: {str(e)}"}
 
+
 @mcp.tool()
 def get_weather_forecast(location: str) -> Dict[str, Any]:
     """
@@ -542,6 +577,11 @@ def get_weather_forecast(location: str) -> Dict[str, Any]:
     api_key = settings.CWA_API_KEY
     if not api_key:
         return {"error": "未設定中央氣象署 API Key"}
+
+    if not location or not location.strip():
+        return {"error": "請提供縣市名稱，例如：臺中市、高雄市"}
+
+    location = _normalize_location(location)
 
     url = "https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-D0047-091"
     params = {
@@ -568,6 +608,8 @@ def get_weather_forecast(location: str) -> Dict[str, Any]:
                 if loc.get("LocationName") == location:
                     location_data = loc
                     break
+            if location_data:
+                break
 
         if not location_data:
             return {"error": f"找不到「{location}」的預報資料，請確認縣市名稱"}
@@ -587,7 +629,6 @@ def get_weather_forecast(location: str) -> Dict[str, Any]:
                 "天氣": t.get("ElementValue", [{}])[0].get("Weather", ""),
             }
 
-            # 對應其他要素
             def get_val(name, key, idx=i):
                 times = elements.get(name, [])
                 if idx < len(times):
@@ -627,7 +668,7 @@ def get_crop_price(
     market: Optional[str] = None,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
-    top: int = 20
+    top: int = 20,
 ) -> Dict[str, Any]:
     """
     查詢農產品批發市場交易行情（資料來源：農業部開放資料）。
@@ -652,6 +693,11 @@ def get_crop_price(
     - get_crop_price(crop_name="高麗菜", market="台北一") — 指定市場
     - get_crop_price(crop_name="香蕉", start_date="114.01.01", end_date="114.01.31") — 查歷史價格
     """
+    if not crop_name or not crop_name.strip():
+        return {"error": "請提供作物名稱，例如：番茄、高麗菜、香蕉"}
+
+    crop_name = crop_name.strip()
+
     try:
         url = "https://data.moa.gov.tw/Service/OpenData/FromM/FarmTransData.aspx"
 
@@ -668,10 +714,13 @@ def get_crop_price(
         resp.raise_for_status()
         data = resp.json()
 
-        # 過濾休市資料
-        results = [item for item in data if item.get("作物代號") != "rest"]
+        # 過濾休市資料，並驗證作物名稱確實匹配（API 會忽略無效 CropName 回傳全部資料）
+        results = [
+            item for item in data
+            if item.get("作物代號") != "rest" and crop_name in item.get("作物名稱", "")
+        ]
 
-        # 精確查詢無結果時，改用模糊搜尋（不帶 CropName，抓大量資料後過濾）
+        # 精確查詢無結果時，改用模糊搜尋（拉大量資料後過濾）
         if not results:
             fuzzy_params = {"$top": 2000}
             if market:
@@ -722,6 +771,8 @@ def get_crop_price(
 
 # ============== 知識庫搜尋工具 ==============
 
+KNOWLEDGE_SIMILARITY_THRESHOLD = 0.3
+
 @mcp.tool()
 def search_knowledge(query: str, top_k: int = 5) -> Dict[str, Any]:
     """
@@ -738,37 +789,48 @@ def search_knowledge(query: str, top_k: int = 5) -> Dict[str, Any]:
     - search_knowledge(query="番茄病蟲害防治")
     - search_knowledge(query="有機肥料施用方法", top_k=3)
     """
-    db = get_db()
-    try:
-        # 檢查知識庫是否有資料
-        count = db.query(KnowledgeDocument).count()
-        if count == 0:
-            return {"message": "知識庫目前沒有資料", "results": []}
+    if not query or not query.strip():
+        return {"error": "請提供搜尋關鍵詞"}
 
-        query_embedding = get_embedding(query)
-        results = (
-            db.query(KnowledgeDocument)
-            .order_by(KnowledgeDocument.embedding.cosine_distance(query_embedding))
-            .limit(top_k)
-            .all()
-        )
+    with get_db() as db:
+        try:
+            count = db.query(KnowledgeDocument).count()
+            if count == 0:
+                return {"message": "知識庫目前沒有資料", "results": []}
 
-        return {
-            "query": query,
-            "count": len(results),
-            "results": [
-                {
-                    "title": r.title,
-                    "content": r.content,
-                    "source": r.source_filename,
-                }
-                for r in results
-            ],
-        }
-    except Exception as e:
-        return {"error": f"搜尋知識庫失敗: {str(e)}"}
-    finally:
-        db.close()
+            query_embedding = get_embedding(query.strip())
+            distance_col = KnowledgeDocument.embedding.cosine_distance(query_embedding)
+
+            results = (
+                db.query(KnowledgeDocument, distance_col.label("distance"))
+                .order_by(distance_col)
+                .limit(top_k)
+                .all()
+            )
+
+            # 過濾掉相似度太低的結果（cosine distance > threshold 表示不夠相關）
+            filtered = []
+            for r in results:
+                similarity = 1 - r.distance
+                if similarity >= KNOWLEDGE_SIMILARITY_THRESHOLD:
+                    filtered.append({
+                        "title": r.KnowledgeDocument.title,
+                        "content": r.KnowledgeDocument.content,
+                        "source": r.KnowledgeDocument.source_filename,
+                        "similarity": round(similarity, 4),
+                    })
+
+            if not filtered:
+                return {"message": "知識庫中沒有找到足夠相關的資料", "query": query, "results": []}
+
+            return {
+                "query": query,
+                "count": len(filtered),
+                "results": filtered,
+            }
+
+        except Exception as e:
+            return {"error": f"搜尋知識庫失敗: {str(e)}"}
 
 
 if __name__ == "__main__":

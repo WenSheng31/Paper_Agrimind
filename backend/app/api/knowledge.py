@@ -139,19 +139,20 @@ def search_knowledge(
     _user=Depends(get_current_user),
 ):
     query_embedding = get_embedding(q)
+    distance_col = KnowledgeDocument.embedding.cosine_distance(query_embedding)
     results = (
-        db.query(KnowledgeDocument)
-        .order_by(KnowledgeDocument.embedding.cosine_distance(query_embedding))
+        db.query(KnowledgeDocument, distance_col.label("distance"))
+        .order_by(distance_col)
         .limit(top_k)
         .all()
     )
     return [
         {
-            "title": r.title,
-            "content": r.content,
-            "source_filename": r.source_filename,
-            "chunk_index": r.chunk_index,
-            "score": None,
+            "title": r.KnowledgeDocument.title,
+            "content": r.KnowledgeDocument.content,
+            "source_filename": r.KnowledgeDocument.source_filename,
+            "chunk_index": r.KnowledgeDocument.chunk_index,
+            "score": round(1 - r.distance, 4),
         }
         for r in results
     ]

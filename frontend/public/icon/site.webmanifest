@@ -1,6 +1,6 @@
 {
-  "name": "Evo.lab",
-  "short_name": "Evo.lab",
+  "name": "AgriMind",
+  "short_name": "AgriMind",
   "icons": [
     {
       "src": "/icon/web-app-manifest-192x192.png",
@@ -15,7 +15,7 @@
       "purpose": "maskable"
     }
   ],
-  "theme_color": "#ffffff",
-  "background_color": "#ffffff",
+  "theme_color": "#059669",
+  "background_color": "#f8fafc",
   "display": "standalone"
 }

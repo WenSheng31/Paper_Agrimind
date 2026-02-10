@@ -12,6 +12,14 @@
 html,
 body {
   font-family: 'Noto Sans TC', sans-serif;
+  background-color: #f8fafc; /* slate-50 */
+}
+
+.dark html,
+.dark body,
+html.dark,
+html.dark body {
+  background-color: #020617; /* slate-950 */
 }
 
 /* 隱藏滾動條 */

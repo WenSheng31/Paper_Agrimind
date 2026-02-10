@@ -33,12 +33,14 @@ export function useTheme() {
   watchEffect(() => {
     const root = window.document.documentElement
     const systemDark = mediaQuery.matches
+    const isDark = theme.value === 'dark' || (theme.value === 'system' && systemDark)
 
     root.classList.remove('dark')
+    if (isDark) root.classList.add('dark')
 
-    if (theme.value === 'dark' || (theme.value === 'system' && systemDark)) {
-      root.classList.add('dark')
-    }
+    // 同步 iOS Safari 狀態列顏色
+    const meta = document.querySelector('meta[name="theme-color"]')
+    if (meta) meta.setAttribute('content', isDark ? '#020617' : '#f8fafc')
 
     localStorage.setItem('theme', theme.value)
   })

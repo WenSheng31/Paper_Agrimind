@@ -17,6 +17,7 @@
 
         <!-- 農場資訊 -->
         <div
+          id="farm-info"
           class="rounded border border-slate-200 bg-white p-6 dark:border-slate-700
             dark:bg-slate-800"
         >
@@ -48,6 +49,7 @@
 
       <!-- AI 總結 -->
       <AiSummary
+        id="farm-ai-summary"
         class="mb-4"
         :prompt="`查詢農場「${farm.name}」(ID: ${farm.id}) 最新的感測器資料與農務記錄，給出該農場的狀態總結與建議。字數控制在150字內。`"
         :cache-key="`farm-${farm.id}-summary`"
@@ -55,6 +57,7 @@
 
       <!-- Tab 切換 -->
       <div
+        id="farm-tabs"
         class="mb-4 rounded border border-slate-200 bg-white dark:border-slate-700
           dark:bg-slate-800"
       >
@@ -127,9 +130,12 @@ import EditFarmModal from '@/components/farm/EditFarmModal.vue'
 import FarmSensorTab from '@/components/farm/FarmSensorTab.vue'
 import FarmOperationsTab from '@/components/farm/FarmOperationsTab.vue'
 import AiSummary from '@/components/ai/AiSummary.vue'
+import { useOnboardingTour } from '@/composables/useOnboardingTour'
 
 const route = useRoute()
 const { showToast } = useToast()
+
+const { startTour } = useOnboardingTour('farmDetail')
 
 const loading = ref(true)
 const submitting = ref(false)
@@ -171,7 +177,8 @@ async function handleUpdateFarm(formData) {
   }
 }
 
-onMounted(() => {
-  loadFarmData()
+onMounted(async () => {
+  await loadFarmData()
+  setTimeout(() => startTour(), 500)
 })
 </script>

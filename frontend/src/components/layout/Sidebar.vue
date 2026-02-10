@@ -21,7 +21,7 @@
     </div>
 
     <!-- 導航選單 -->
-    <nav class="flex-1 p-4 py-0">
+    <nav id="sidebar-nav" class="flex-1 p-4 py-0">
       <ul class="space-y-2">
         <li>
           <router-link

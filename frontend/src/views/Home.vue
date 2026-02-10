@@ -8,12 +8,13 @@
     <FarmQuickNav :farms="farms" class="mb-4" />
 
     <AiSummary
+      id="ai-summary"
       class="mb-4"
       :prompt="`請使用 get_farms_overview 工具取得所有農場的最新狀態，然後嚴格按照以下固定 Markdown 格式回覆，不要加入其他內容：\n\n## 整體狀態\n一句話總結所有農場的整體情況。\n\n## 各農場摘要\n- **農場名稱**：環境（溫度/濕度），土壤狀況，最近操作。\n（每個農場一行，格式一致）\n\n## 建議事項\n1. 第一個建議\n2. 第二個建議\n（最多3條，針對當前數據給出具體建議）`"
       cache-key="home-summary"
     />
 
-    <DashboardCharts v-if="farms.length" :farms="farms" />
+    <DashboardCharts v-if="farms.length" id="dashboard-charts" :farms="farms" />
   </div>
 </template>
 
@@ -25,9 +26,11 @@ import api from '@/services/api'
 import FarmQuickNav from '@/components/dashboard/FarmQuickNav.vue'
 import AiSummary from '@/components/ai/AiSummary.vue'
 import DashboardCharts from '@/components/dashboard/DashboardCharts.vue'
+import { useOnboardingTour } from '@/composables/useOnboardingTour'
 
 const authStore = useAuthStore()
 const { showToast } = useToast()
+const { startTour } = useOnboardingTour('home')
 
 const farms = ref([])
 
@@ -40,7 +43,8 @@ async function loadDashboardData() {
   }
 }
 
-onMounted(() => {
-  loadDashboardData()
+onMounted(async () => {
+  await loadDashboardData()
+  setTimeout(() => startTour(), 500)
 })
 </script>

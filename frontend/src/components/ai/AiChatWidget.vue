@@ -27,6 +27,7 @@
         </transition>
 
         <button
+          id="ai-chat-btn"
           @click="isOpen = true"
           class="flex h-16 w-16 cursor-pointer items-center justify-center rounded-full
             bg-emerald-600 text-white shadow-lg transition-transform duration-75 select-none
@@ -194,6 +195,15 @@
               <Mic v-if="!isListening" :size="20" />
               <MicOff v-else :size="20" />
             </button>
+            <button
+              type="submit"
+              :disabled="loading || !inputMessage.trim()"
+              class="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full
+                bg-emerald-600 text-white transition hover:bg-emerald-700
+                disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <SendHorizontal :size="20" />
+            </button>
           </form>
         </div>
       </div>
@@ -206,7 +216,7 @@ import { ref, nextTick, onMounted, onUnmounted, watch } from 'vue'
 import { aiAPI } from '@/services/api'
 import { useToast } from '@/composables/useToast'
 import { useMarkdown } from '@/composables/useMarkdown'
-import { X, Bot, Mic, MicOff } from 'lucide-vue-next'
+import { X, Bot, Mic, MicOff, SendHorizontal } from 'lucide-vue-next'
 
 const { showToast } = useToast()
 const { render: renderMarkdown } = useMarkdown()
@@ -254,6 +264,7 @@ const toggleListening = () => {
   if (isListening.value) {
     recognition.stop()
   } else {
+    inputMessage.value = ''
     recognition.start()
     isListening.value = true
   }

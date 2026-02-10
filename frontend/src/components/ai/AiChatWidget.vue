@@ -169,16 +169,31 @@
 
         <!-- 輸入區 -->
         <div class="shrink-0 bg-slate-50 p-4 dark:bg-slate-900">
-          <form @submit.prevent="sendMessage">
+          <form @submit.prevent="sendMessage" class="flex items-center gap-2">
             <input
               ref="inputField"
               v-model="inputMessage"
               type="text"
               placeholder="輸入訊息並按 Enter 發送..."
               :disabled="loading"
-              class="w-full rounded border border-slate-200 px-4 py-3 text-base focus:outline-none
+              class="min-w-0 flex-1 rounded border border-slate-200 px-4 py-3 text-base focus:outline-none
                 disabled:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:disabled:bg-slate-900"
             />
+            <button
+              v-if="speechSupported"
+              type="button"
+              @click="toggleListening"
+              :disabled="loading"
+              :class="[
+                'flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full transition',
+                isListening
+                  ? 'animate-pulse bg-red-500 text-white'
+                  : 'bg-slate-200 text-slate-600 hover:bg-emerald-100 hover:text-emerald-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-emerald-900 dark:hover:text-emerald-400',
+              ]"
+            >
+              <Mic v-if="!isListening" :size="20" />
+              <MicOff v-else :size="20" />
+            </button>
           </form>
         </div>
       </div>
@@ -191,7 +206,7 @@ import { ref, nextTick, onMounted, onUnmounted, watch } from 'vue'
 import { aiAPI } from '@/services/api'
 import { useToast } from '@/composables/useToast'
 import { useMarkdown } from '@/composables/useMarkdown'
-import { X, Bot } from 'lucide-vue-next'
+import { X, Bot, Mic, MicOff } from 'lucide-vue-next'
 
 const { showToast } = useToast()
 const { render: renderMarkdown } = useMarkdown()
@@ -204,6 +219,45 @@ const messagesContainer = ref(null)
 const inputField = ref(null)
 const expandedTools = ref({})
 const showTooltip = ref(false)
+
+// 語音輸入
+const isListening = ref(false)
+const speechSupported = ref(false)
+let recognition = null
+
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+if (SpeechRecognition) {
+  speechSupported.value = true
+  recognition = new SpeechRecognition()
+  recognition.lang = 'zh-TW'
+  recognition.interimResults = true
+  recognition.continuous = false
+
+  recognition.onresult = (event) => {
+    const transcript = Array.from(event.results)
+      .map((r) => r[0].transcript)
+      .join('')
+    inputMessage.value = transcript
+  }
+
+  recognition.onend = () => {
+    isListening.value = false
+  }
+
+  recognition.onerror = () => {
+    isListening.value = false
+  }
+}
+
+const toggleListening = () => {
+  if (!recognition) return
+  if (isListening.value) {
+    recognition.stop()
+  } else {
+    recognition.start()
+    isListening.value = true
+  }
+}
 
 setTimeout(() => {
   showTooltip.value = true
@@ -273,6 +327,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyDown)
+  if (recognition && isListening.value) recognition.stop()
 })
 
 // 發送訊息

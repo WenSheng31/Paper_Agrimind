@@ -9,7 +9,7 @@ from .api import auth, admin, agriculture, ai, knowledge
 async def lifespan(app: FastAPI):
     init_db()
     # 啟動時連接 MCP 服務器
-    await ai.mcp_client.connect_to_server()
+    await ai.mcp_client.connect()
     yield
     # 關閉時清理 MCP 資源
     await ai.mcp_client.cleanup()

@@ -1,13 +1,16 @@
 from contextlib import AsyncExitStack
 from typing import Optional
+import asyncio
 import os
 import json
+import time
+import logging
 
-from anthropic import Anthropic, AsyncAnthropic
+from anthropic import AsyncAnthropic
 from dotenv import load_dotenv
 
-# 載入 .env 環境變數
 load_dotenv()
+
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import StreamingResponse
 from mcp import ClientSession, StdioServerParameters
@@ -15,172 +18,201 @@ from .auth import get_current_user
 from mcp.client.stdio import stdio_client
 from pydantic import BaseModel
 
+logger = logging.getLogger(__name__)
+
 # Claude 模型常數
 ANTHROPIC_MODEL = "claude-haiku-4-5-20251001"
 
-# 取得 server.py 的絕對路徑
+# MCP Server 路徑
 SERVER_PATH = os.path.join(os.path.dirname(__file__), "..", "mcp_server", "server.py")
 
+# 對話 Session 過期時間（秒）
+SESSION_TTL = 30 * 60
+
+# MCP 連線池大小
+POOL_SIZE = 3
+
+
+# ============== Pydantic 模型 ==============
 
 class QueryRequest(BaseModel):
-    """查詢請求模型"""
     query: str
     session_id: str
 
 
 class ToolUsage(BaseModel):
-    """工具使用資訊"""
     tool_name: str
     tool_args: dict
     tool_output: Optional[str] = None
 
 
 class QueryResponse(BaseModel):
-    """查詢回應模型"""
     response: str
     session_id: str
     tool_used: list[ToolUsage] = []
 
 
 class Tool(BaseModel):
-    """工具資訊模型"""
     name: str
     description: str
 
 
 class ToolsResponse(BaseModel):
-    """工具列表回應模型"""
     tools: list[Tool]
 
 
+# ============== MCP Client ==============
+
 class MCPClient:
-    """MCP 客戶端類別，負責連接 MCP 服務器並與 Claude AI 互動"""
+    """MCP 客戶端，負責連接 MCP 服務器並與 Claude AI 互動。
 
-    def __init__(self):
-        self.session: ClientSession | None = None
-        self.exit_stack = AsyncExitStack()
-        self.anthropic = Anthropic()
-        self.conversations = {}  # {session_id: history}
+    - 使用 AsyncAnthropic 避免阻塞事件迴圈
+    - 使用 MCP 連線池支援多人同時呼叫工具
+    - 自動清理過期對話歷史
+    """
 
-    async def connect_to_server(self):
-        """連接到 MCP 服務器（server.py）"""
-        server_params = StdioServerParameters(
-            command="python",
-            args=[SERVER_PATH],
-            env=os.environ.copy(),
-        )
+    def __init__(self, pool_size: int = POOL_SIZE):
+        self.anthropic = AsyncAnthropic()
+        self._pool: asyncio.Queue[ClientSession] = asyncio.Queue()
+        self._pool_size = pool_size
+        self._exit_stacks: list[AsyncExitStack] = []
+        self._conversations: dict[str, dict] = {}
 
-        stdio_transport = await self.exit_stack.enter_async_context(stdio_client(server_params))
-        stdio, write = stdio_transport
+    # ---- 生命週期 ----
 
-        self.session = await self.exit_stack.enter_async_context(ClientSession(stdio, write))
-        await self.session.initialize()
-
-    async def get_tools(self) -> list[dict]:
-        """獲取可用的工具列表"""
-        response = await self.session.list_tools()
-        return [{"name": tool.name, "description": tool.description} for tool in response.tools]
-
-    async def process_query(self, query: str, session_id: str) -> tuple[str, list[ToolUsage]]:
-        """處理用戶查詢，使用 Claude 和可用工具"""
-        if session_id not in self.conversations:
-            self.conversations[session_id] = []
-
-        conversation_history = self.conversations[session_id]
-        conversation_history.append({"role": "user", "content": query})
-
-        response = await self.session.list_tools()
-        available_tools = [
-            {"name": tool.name, "description": tool.description, "input_schema": tool.inputSchema}
-            for tool in response.tools
-        ]
-
-        all_tool_usages = []
-        final_text = ""
-
-        while True:
-            response = self.anthropic.messages.create(
-                model=ANTHROPIC_MODEL,
-                max_tokens=4096,
-                system="請使用繁體中文回答用戶問題",
-                messages=conversation_history,
-                tools=available_tools
+    async def connect(self):
+        """建立 MCP 連線池（應在 FastAPI lifespan 啟動時呼叫）"""
+        for i in range(self._pool_size):
+            stack = AsyncExitStack()
+            server_params = StdioServerParameters(
+                command="python",
+                args=[SERVER_PATH],
+                env=os.environ.copy(),
             )
 
-            assistant_content = []
-            tool_results = []
-            has_tool_use = False
+            stdio_transport = await stack.enter_async_context(stdio_client(server_params))
+            read, write = stdio_transport
 
-            for content in response.content:
-                assistant_content.append(content)
+            session = await stack.enter_async_context(ClientSession(read, write))
+            await session.initialize()
 
-                if content.type == "tool_use":
-                    has_tool_use = True
-                    tool_name = content.name
-                    tool_args = content.input
+            self._exit_stacks.append(stack)
+            await self._pool.put(session)
 
-                    result = await self.session.call_tool(tool_name, tool_args)
+        logger.info(f"MCP 連線池建立完成，大小: {self._pool_size}")
 
-                    # 提取工具回傳的文字內容
-                    output_text = ""
-                    if result.content:
-                        for item in result.content:
-                            if hasattr(item, "text"):
-                                output_text += item.text
-                            else:
-                                output_text += str(item)
-                    
-                    all_tool_usages.append(ToolUsage(
-                        tool_name=tool_name, 
-                        tool_args=tool_args,
-                        tool_output=output_text
-                    ))
+    async def cleanup(self):
+        """關閉所有 MCP 連線（應在 FastAPI lifespan 關閉時呼叫）"""
+        for stack in self._exit_stacks:
+            await stack.aclose()
+        self._exit_stacks.clear()
 
-                    tool_results.append({
-                        "type": "tool_result",
-                        "tool_use_id": content.id,
-                        "content": output_text
-                    })
+    # ---- 連線池管理 ----
 
-            conversation_history.append({"role": "assistant", "content": assistant_content})
+    async def _acquire(self) -> ClientSession:
+        """從池中取得一個可用的 MCP session"""
+        return await self._pool.get()
 
-            if has_tool_use:
-                conversation_history.append({
-                    "role": "user",
-                    "content": tool_results
-                })
-            else:
-                # 沒有工具調用，這是最終回應
-                text_blocks = [c.text for c in response.content if c.type == "text"]
-                final_text = "\n".join(text_blocks)
-                break
+    async def _release(self, session: ClientSession):
+        """歸還 MCP session 到池中"""
+        await self._pool.put(session)
 
-        return final_text, all_tool_usages
+    # ---- 對話歷史管理（帶 TTL 自動清理） ----
 
-    async def process_query_stream(self, query: str, session_id: str):
-        """處理用戶查詢（串流模式），使用 async generator yield SSE 事件"""
-        if session_id not in self.conversations:
-            self.conversations[session_id] = []
+    def _get_history(self, session_id: str) -> list:
+        now = time.time()
+        expired = [sid for sid, s in self._conversations.items() if now - s["ts"] > SESSION_TTL]
+        for sid in expired:
+            del self._conversations[sid]
 
-        conversation_history = self.conversations[session_id]
-        conversation_history.append({"role": "user", "content": query})
+        if session_id not in self._conversations:
+            self._conversations[session_id] = {"history": [], "ts": now}
 
-        response = await self.session.list_tools()
-        available_tools = [
-            {"name": tool.name, "description": tool.description, "input_schema": tool.inputSchema}
-            for tool in response.tools
+        entry = self._conversations[session_id]
+        entry["ts"] = now
+        return entry["history"]
+
+    # ---- MCP 工具操作（透過連線池） ----
+
+    async def _list_tools(self) -> list[dict]:
+        session = await self._acquire()
+        try:
+            response = await session.list_tools()
+        finally:
+            await self._release(session)
+        return [
+            {"name": t.name, "description": t.description, "input_schema": t.inputSchema}
+            for t in response.tools
         ]
 
-        async_client = AsyncAnthropic()
+    async def _call_tool(self, name: str, args: dict) -> str:
+        session = await self._acquire()
+        try:
+            result = await session.call_tool(name, args)
+        finally:
+            await self._release(session)
+        output = ""
+        if result.content:
+            for item in result.content:
+                output += item.text if hasattr(item, "text") else str(item)
+        return output
+
+    # ---- 公開 API ----
+
+    async def get_tools(self) -> list[dict]:
+        session = await self._acquire()
+        try:
+            response = await session.list_tools()
+        finally:
+            await self._release(session)
+        return [{"name": t.name, "description": t.description} for t in response.tools]
+
+    async def process_query(self, query: str, session_id: str) -> tuple[str, list[ToolUsage]]:
+        """處理用戶查詢（一次性回應，供 AiSummary 使用）"""
+        history = self._get_history(session_id)
+        history.append({"role": "user", "content": query})
+        available_tools = await self._list_tools()
+
         all_tool_usages = []
 
         while True:
-            # 使用串流 API 呼叫 Claude
-            async with async_client.messages.stream(
+            response = await self.anthropic.messages.create(
                 model=ANTHROPIC_MODEL,
                 max_tokens=4096,
                 system="請使用繁體中文回答用戶問題",
-                messages=conversation_history,
+                messages=history,
+                tools=available_tools,
+            )
+
+            history.append({"role": "assistant", "content": list(response.content)})
+            tool_uses = [c for c in response.content if c.type == "tool_use"]
+
+            if not tool_uses:
+                text_blocks = [c.text for c in response.content if c.type == "text"]
+                return "\n".join(text_blocks), all_tool_usages
+
+            tool_results = []
+            for tu in tool_uses:
+                output = await self._call_tool(tu.name, tu.input)
+                all_tool_usages.append(ToolUsage(tool_name=tu.name, tool_args=tu.input, tool_output=output))
+                tool_results.append({"type": "tool_result", "tool_use_id": tu.id, "content": output})
+
+            history.append({"role": "user", "content": tool_results})
+
+    async def process_query_stream(self, query: str, session_id: str):
+        """處理用戶查詢（SSE 串流模式），yield SSE 事件字串"""
+        history = self._get_history(session_id)
+        history.append({"role": "user", "content": query})
+        available_tools = await self._list_tools()
+
+        all_tool_usages = []
+
+        while True:
+            async with self.anthropic.messages.stream(
+                model=ANTHROPIC_MODEL,
+                max_tokens=4096,
+                system="請使用繁體中文回答用戶問題",
+                messages=history,
                 tools=available_tools,
             ) as stream:
                 async for event in stream:
@@ -189,45 +221,25 @@ class MCPClient:
 
                 final_message = await stream.get_final_message()
 
-            # 將助手回應加入對話歷史
-            conversation_history.append({"role": "assistant", "content": list(final_message.content)})
-
+            history.append({"role": "assistant", "content": list(final_message.content)})
             tool_uses = [c for c in final_message.content if c.type == "tool_use"]
 
             if not tool_uses:
                 break
 
-            # 執行工具
             tool_results = []
             for tu in tool_uses:
                 yield f"event: tool_start\ndata: {json.dumps({'name': tu.name, 'args': tu.input}, ensure_ascii=False)}\n\n"
 
-                result = await self.session.call_tool(tu.name, tu.input)
-                output_text = ""
-                if result.content:
-                    for item in result.content:
-                        if hasattr(item, "text"):
-                            output_text += item.text
-                        else:
-                            output_text += str(item)
+                output = await self._call_tool(tu.name, tu.input)
 
-                yield f"event: tool_end\ndata: {json.dumps({'name': tu.name, 'output': output_text}, ensure_ascii=False)}\n\n"
+                yield f"event: tool_end\ndata: {json.dumps({'name': tu.name, 'output': output}, ensure_ascii=False)}\n\n"
 
-                all_tool_usages.append(ToolUsage(
-                    tool_name=tu.name,
-                    tool_args=tu.input,
-                    tool_output=output_text,
-                ))
+                all_tool_usages.append(ToolUsage(tool_name=tu.name, tool_args=tu.input, tool_output=output))
+                tool_results.append({"type": "tool_result", "tool_use_id": tu.id, "content": output})
 
-                tool_results.append({
-                    "type": "tool_result",
-                    "tool_use_id": tu.id,
-                    "content": output_text,
-                })
+            history.append({"role": "user", "content": tool_results})
 
-            conversation_history.append({"role": "user", "content": tool_results})
-
-        # 完成
         done_data = {
             "tool_calls": [
                 {"name": t.tool_name, "args": t.tool_args, "output": t.tool_output}
@@ -236,15 +248,10 @@ class MCPClient:
         }
         yield f"event: done\ndata: {json.dumps(done_data, ensure_ascii=False)}\n\n"
 
-    async def cleanup(self):
-        """清理資源並關閉連接"""
-        await self.exit_stack.aclose()
 
+# ============== 全域實例 & 路由 ==============
 
-# 全域 MCP 客戶端實例
 mcp_client = MCPClient()
-
-# 建立路由
 router = APIRouter(prefix="/api/ai", tags=["AI"])
 
 
@@ -255,8 +262,7 @@ async def query_ai(request: QueryRequest, _user=Depends(get_current_user)):
         response, tool_usages = await mcp_client.process_query(request.query, request.session_id)
         return QueryResponse(response=response, session_id=request.session_id, tool_used=tool_usages)
     except Exception as e:
-        import logging
-        logging.getLogger(__name__).error(f"AI query failed: {e}")
+        logger.error(f"AI query failed: {e}")
         raise HTTPException(status_code=500, detail="AI 查詢失敗，請稍後再試")
 
 
@@ -268,8 +274,7 @@ async def stream_ai(request: QueryRequest, _user=Depends(get_current_user)):
             async for event in mcp_client.process_query_stream(request.query, request.session_id):
                 yield event
         except Exception as e:
-            import logging
-            logging.getLogger(__name__).error(f"AI stream failed: {e}")
+            logger.error(f"AI stream failed: {e}")
             yield f"event: error\ndata: {json.dumps({'message': 'AI 查詢失敗，請稍後再試'}, ensure_ascii=False)}\n\n"
 
     return StreamingResponse(
@@ -286,6 +291,5 @@ async def get_tools(_user=Depends(get_current_user)):
         tools = await mcp_client.get_tools()
         return ToolsResponse(tools=tools)
     except Exception as e:
-        import logging
-        logging.getLogger(__name__).error(f"Get tools failed: {e}")
+        logger.error(f"Get tools failed: {e}")
         raise HTTPException(status_code=500, detail="無法取得工具列表")

@@ -17,7 +17,7 @@
 
       <!-- Loading 指示器 -->
       <div
-        v-else-if="loading"
+        v-else-if="loading && !content"
         key="loading"
         class="flex animate-pulse flex-col items-center justify-center gap-2"
       >
@@ -67,9 +67,19 @@ const renderedContent = computed(() => render(content.value))
 async function generate() {
   loading.value = true
   content.value = ''
+  const tempSessionId = `summary-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
   try {
-    content.value = await aiAPI.ask(props.prompt)
-    props.cacheKey && sessionStorage.setItem(props.cacheKey, content.value)
+    await aiAPI.chatStream(props.prompt, tempSessionId, {
+      onTextDelta(data) {
+        content.value += data.content
+      },
+      onDone() {
+        if (props.cacheKey) sessionStorage.setItem(props.cacheKey, content.value)
+      },
+      onError(data) {
+        showToast(data.message || '生成 AI 總結失敗', 'error')
+      },
+    })
   } catch (err) {
     showToast(err.message || '生成 AI 總結失敗', 'error')
   } finally {

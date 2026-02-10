@@ -1,13 +1,15 @@
 from contextlib import AsyncExitStack
 from typing import Optional
 import os
+import json
 
-from anthropic import Anthropic
+from anthropic import Anthropic, AsyncAnthropic
 from dotenv import load_dotenv
 
 # 載入 .env 環境變數
 load_dotenv()
 from fastapi import APIRouter, HTTPException, Depends
+from fastapi.responses import StreamingResponse
 from mcp import ClientSession, StdioServerParameters
 from .auth import get_current_user
 from mcp.client.stdio import stdio_client
@@ -155,6 +157,85 @@ class MCPClient:
 
         return final_text, all_tool_usages
 
+    async def process_query_stream(self, query: str, session_id: str):
+        """處理用戶查詢（串流模式），使用 async generator yield SSE 事件"""
+        if session_id not in self.conversations:
+            self.conversations[session_id] = []
+
+        conversation_history = self.conversations[session_id]
+        conversation_history.append({"role": "user", "content": query})
+
+        response = await self.session.list_tools()
+        available_tools = [
+            {"name": tool.name, "description": tool.description, "input_schema": tool.inputSchema}
+            for tool in response.tools
+        ]
+
+        async_client = AsyncAnthropic()
+        all_tool_usages = []
+
+        while True:
+            # 使用串流 API 呼叫 Claude
+            async with async_client.messages.stream(
+                model=ANTHROPIC_MODEL,
+                max_tokens=4096,
+                system="請使用繁體中文回答用戶問題",
+                messages=conversation_history,
+                tools=available_tools,
+            ) as stream:
+                async for event in stream:
+                    if event.type == "text":
+                        yield f"event: text_delta\ndata: {json.dumps({'content': event.text}, ensure_ascii=False)}\n\n"
+
+                final_message = await stream.get_final_message()
+
+            # 將助手回應加入對話歷史
+            conversation_history.append({"role": "assistant", "content": list(final_message.content)})
+
+            tool_uses = [c for c in final_message.content if c.type == "tool_use"]
+
+            if not tool_uses:
+                break
+
+            # 執行工具
+            tool_results = []
+            for tu in tool_uses:
+                yield f"event: tool_start\ndata: {json.dumps({'name': tu.name, 'args': tu.input}, ensure_ascii=False)}\n\n"
+
+                result = await self.session.call_tool(tu.name, tu.input)
+                output_text = ""
+                if result.content:
+                    for item in result.content:
+                        if hasattr(item, "text"):
+                            output_text += item.text
+                        else:
+                            output_text += str(item)
+
+                yield f"event: tool_end\ndata: {json.dumps({'name': tu.name, 'output': output_text}, ensure_ascii=False)}\n\n"
+
+                all_tool_usages.append(ToolUsage(
+                    tool_name=tu.name,
+                    tool_args=tu.input,
+                    tool_output=output_text,
+                ))
+
+                tool_results.append({
+                    "type": "tool_result",
+                    "tool_use_id": tu.id,
+                    "content": output_text,
+                })
+
+            conversation_history.append({"role": "user", "content": tool_results})
+
+        # 完成
+        done_data = {
+            "tool_calls": [
+                {"name": t.tool_name, "args": t.tool_args, "output": t.tool_output}
+                for t in all_tool_usages
+            ]
+        }
+        yield f"event: done\ndata: {json.dumps(done_data, ensure_ascii=False)}\n\n"
+
     async def cleanup(self):
         """清理資源並關閉連接"""
         await self.exit_stack.aclose()
@@ -177,6 +258,25 @@ async def query_ai(request: QueryRequest, _user=Depends(get_current_user)):
         import logging
         logging.getLogger(__name__).error(f"AI query failed: {e}")
         raise HTTPException(status_code=500, detail="AI 查詢失敗，請稍後再試")
+
+
+@router.post("/stream")
+async def stream_ai(request: QueryRequest, _user=Depends(get_current_user)):
+    """向 AI 發送查詢並以 SSE 串流回應"""
+    async def event_generator():
+        try:
+            async for event in mcp_client.process_query_stream(request.query, request.session_id):
+                yield event
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error(f"AI stream failed: {e}")
+            yield f"event: error\ndata: {json.dumps({'message': 'AI 查詢失敗，請稍後再試'}, ensure_ascii=False)}\n\n"
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @router.get("/tools", response_model=ToolsResponse)

@@ -234,6 +234,59 @@ class AiService {
     }
   }
 
+  // 串流對話查詢（SSE）
+  async chatStream(query, sessionId, { onToolStart, onToolEnd, onTextDelta, onDone, onError }) {
+    const url = `${this.api.baseURL}/api/ai/stream`
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...this.api.getAuthHeader(),
+      },
+      body: JSON.stringify({ query, session_id: sessionId }),
+    })
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('token')
+      }
+      const data = await response.json().catch(() => null)
+      throw {
+        status: response.status,
+        message: response.status === 401 ? '登入已過期，請重新登入' : (data?.detail || '請求失敗'),
+      }
+    }
+
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split('\n')
+      // 保留最後一個不完整的行
+      buffer = lines.pop()
+
+      let eventType = null
+      for (const line of lines) {
+        if (line.startsWith('event: ')) {
+          eventType = line.slice(7).trim()
+        } else if (line.startsWith('data: ') && eventType) {
+          const data = JSON.parse(line.slice(6))
+          if (eventType === 'tool_start') onToolStart?.(data)
+          else if (eventType === 'tool_end') onToolEnd?.(data)
+          else if (eventType === 'text_delta') onTextDelta?.(data)
+          else if (eventType === 'done') onDone?.(data)
+          else if (eventType === 'error') onError?.(data)
+          eventType = null
+        }
+      }
+    }
+  }
+
   async getTools() {
     return this.api.request('/api/ai/tools')
   }

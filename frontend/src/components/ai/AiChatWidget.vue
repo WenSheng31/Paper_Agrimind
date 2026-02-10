@@ -156,10 +156,14 @@
             </div>
           </div>
 
-          <!-- Loading 指示器 -->
+          <!-- 串流狀態指示器 -->
           <transition name="message" key="loading">
             <div v-if="loading" class="flex justify-start px-4 py-2">
-              <div class="flex gap-1.5">
+              <div v-if="streamingToolName" class="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
+                <span class="h-2 w-2 animate-ping rounded-full bg-emerald-500"></span>
+                正在呼叫工具: {{ streamingToolName }}
+              </div>
+              <div v-else class="flex gap-1.5">
                 <span class="h-2 w-2 animate-bounce rounded-full bg-slate-400 dark:bg-slate-600"></span>
                 <span class="h-2 w-2 animate-bounce rounded-full bg-slate-400 dark:bg-slate-600 delay-100"></span>
                 <span class="h-2 w-2 animate-bounce rounded-full bg-slate-400 dark:bg-slate-600 delay-200"></span>
@@ -229,6 +233,7 @@ const messagesContainer = ref(null)
 const inputField = ref(null)
 const expandedTools = ref({})
 const showTooltip = ref(false)
+const streamingToolName = ref('')
 
 // 語音輸入
 const isListening = ref(false)
@@ -341,7 +346,7 @@ onUnmounted(() => {
   if (recognition && isListening.value) recognition.stop()
 })
 
-// 發送訊息
+// 發送訊息（串流模式）
 const sendMessage = async () => {
   if (!inputMessage.value.trim() || loading.value) return
 
@@ -356,15 +361,59 @@ const sendMessage = async () => {
 
   await scrollToBottom()
   loading.value = true
+  streamingToolName.value = ''
+
+  // 預先建立助手訊息，串流時逐步填入
+  const assistantMsgId = ++messageId
+  const toolCalls = []
+  let assistantAdded = false
+  let pendingToolArgs = null
 
   try {
-    const response = await aiAPI.chat(userMessage, sessionId)
-
-    messages.value.push({
-      id: ++messageId,
-      role: 'assistant',
-      content: response.content,
-      tool_calls: response.tool_calls,
+    await aiAPI.chatStream(userMessage, sessionId, {
+      onToolStart(data) {
+        streamingToolName.value = data.name
+        pendingToolArgs = data.args
+      },
+      onToolEnd(data) {
+        streamingToolName.value = ''
+        toolCalls.push({ name: data.name, input: pendingToolArgs, output: data.output })
+        pendingToolArgs = null
+      },
+      onTextDelta(data) {
+        if (!assistantAdded) {
+          messages.value.push({
+            id: assistantMsgId,
+            role: 'assistant',
+            content: '',
+            tool_calls: [],
+          })
+          assistantAdded = true
+        }
+        const msg = messages.value.find((m) => m.id === assistantMsgId)
+        if (msg) {
+          msg.content += data.content
+          scrollToBottom()
+        }
+      },
+      onDone(data) {
+        if (!assistantAdded) {
+          messages.value.push({
+            id: assistantMsgId,
+            role: 'assistant',
+            content: '',
+            tool_calls: [],
+          })
+          assistantAdded = true
+        }
+        const msg = messages.value.find((m) => m.id === assistantMsgId)
+        if (msg) {
+          msg.tool_calls = toolCalls
+        }
+      },
+      onError(data) {
+        showToast(data.message || '發送失敗', 'error')
+      },
     })
 
     await scrollToBottom()
@@ -372,6 +421,7 @@ const sendMessage = async () => {
     showToast(err.message || '發送失敗', 'error')
   } finally {
     loading.value = false
+    streamingToolName.value = ''
     await nextTick()
     inputField.value?.focus()
   }

@@ -42,9 +42,9 @@
     <transition name="chat">
       <div
         v-if="isOpen"
-        class="fixed inset-0 z-50 flex h-[100dvh] flex-col overflow-hidden border-slate-200 bg-white
+        class="fixed inset-0 z-50 flex h-[100dvh] flex-col overflow-hidden bg-white
           md:inset-auto md:right-6 md:bottom-6 md:h-[750px] md:max-h-[90vh] md:w-[500px]
-          md:rounded-lg md:border dark:border-slate-700 dark:bg-slate-900"
+          md:rounded-lg md:border md:border-slate-200 dark:border-slate-700 dark:bg-slate-900"
       >
         <!-- 標題列 -->
         <div
@@ -89,7 +89,7 @@
           <div
             v-for="msg in messages"
             :key="msg.id"
-            :class="['flex', msg.role === 'user' ? 'justify-end' : 'justify-start']"
+            :class="['flex items-end', msg.role === 'user' ? 'justify-end' : 'justify-start']"
           >
             <div
               :class="[
@@ -154,6 +154,17 @@
                 </div>
               </div>
             </div>
+              <!-- 複製按鈕 -->
+              <button
+                v-if="msg.role === 'assistant' && msg.content"
+                @click="copyMessage(msg)"
+                class="mb-1 ml-2 flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full
+                  bg-emerald-600 text-white transition hover:bg-emerald-700"
+                :title="copiedMsgId === msg.id ? '已複製' : '複製'"
+              >
+                <Check v-if="copiedMsgId === msg.id" :size="18" class="text-emerald-500" />
+                <Copy v-else :size="18" />
+              </button>
           </div>
 
           <!-- 串流狀態指示器 -->
@@ -220,7 +231,7 @@ import { ref, nextTick, onMounted, onUnmounted, watch } from 'vue'
 import { aiAPI } from '@/services/api'
 import { useToast } from '@/composables/useToast'
 import { useMarkdown } from '@/composables/useMarkdown'
-import { X, Bot, Mic, MicOff, SendHorizontal } from 'lucide-vue-next'
+import { X, Bot, Mic, MicOff, SendHorizontal, Copy, Check } from 'lucide-vue-next'
 
 const { showToast } = useToast()
 const { render: renderMarkdown } = useMarkdown()
@@ -232,6 +243,7 @@ const loading = ref(false)
 const messagesContainer = ref(null)
 const inputField = ref(null)
 const expandedTools = ref({})
+const copiedMsgId = ref(null)
 const showTooltip = ref(false)
 const streamingToolName = ref('')
 
@@ -305,6 +317,17 @@ const toggleToolDetails = (msgId, toolIndex) => {
     delete expandedTools.value[key]
   } else {
     expandedTools.value[key] = true
+  }
+}
+
+// 複製訊息
+const copyMessage = async (msg) => {
+  try {
+    await navigator.clipboard.writeText(msg.content)
+    copiedMsgId.value = msg.id
+    setTimeout(() => { copiedMsgId.value = null }, 1500)
+  } catch {
+    showToast('複製失敗', 'error')
   }
 }
 

@@ -41,6 +41,7 @@ jobs:
         with:
           context: ./backend      # 指向你的後端資料夾
           push: true
+          platforms: linux/amd64,linux/arm64
           # 格式：ghcr.io/使用者名稱/鏡像名稱:標籤
           tags: |
             ghcr.io/wensheng31/paper_argimind:latest

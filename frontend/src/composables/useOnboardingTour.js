@@ -47,7 +47,7 @@ const tours = {
       element: '#farm-info',
       popover: {
         title: '農場資訊',
-        description: '這裡顯示農場的基本資料，管理員可以點右上角「編輯」修改。',
+        description: '這裡顯示農場的基本資料。',
         side: 'bottom',
         align: 'start',
       },

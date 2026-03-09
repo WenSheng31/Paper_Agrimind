@@ -1,0 +1,22 @@
+name: Deploy Backend
+
+on:
+  workflow_dispatch:
+  push:
+    branches: main
+    paths:
+      - "backend/**"
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t agrimind:latest ./backend
+
+      - name: Restart service
+        run: cd /home/evolab/docker/ws_agrimind && docker compose up -d

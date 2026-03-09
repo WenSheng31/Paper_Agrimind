@@ -6,8 +6,8 @@ from .config import settings
 # 建立同步引擎 (PostgreSQL 使用 psycopg2)
 engine = create_engine(
     settings.DATABASE_URL,
-    pool_size=5,              # 連接池大小
-    max_overflow=10,          # 最大溢出連接數
+    pool_size=10,             # 連接池大小
+    max_overflow=15,          # 最大溢出連接數
     pool_pre_ping=True,       # 每次連接前檢查連接是否有效
     pool_recycle=3600,        # 連接回收時間（秒），防止連接過期
     echo=False                # 設為 True 可以看到 SQL 語句（開發時有用）

@@ -65,7 +65,7 @@ SERVER_PATH = os.path.join(os.path.dirname(__file__), "..", "mcp_server", "serve
 SESSION_TTL = 30 * 60
 
 # MCP 連線池大小
-POOL_SIZE = 3
+POOL_SIZE = 10
 
 
 # ============== Pydantic 模型 ==============

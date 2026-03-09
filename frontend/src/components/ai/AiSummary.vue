@@ -74,7 +74,7 @@ async function generate() {
         content.value += data.content
       },
       onDone() {
-        if (props.cacheKey) sessionStorage.setItem(props.cacheKey, content.value)
+        if (props.cacheKey) localStorage.setItem(props.cacheKey, content.value)
       },
       onError(data) {
         showToast(data.message || '生成 AI 總結失敗', 'error')
@@ -89,7 +89,7 @@ async function generate() {
 
 onMounted(() => {
   if (props.cacheKey) {
-    const cached = sessionStorage.getItem(props.cacheKey)
+    const cached = localStorage.getItem(props.cacheKey)
     if (cached) content.value = cached
   }
 })

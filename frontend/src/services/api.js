@@ -235,15 +235,19 @@ class AiService {
   }
 
   // 串流對話查詢（SSE）
-  async chatStream(query, sessionId, { onToolStart, onToolEnd, onTextDelta, onDone, onError }) {
+  async chatStream(query, sessionId, { onToolStart, onToolEnd, onTextDelta, onDone, onError, images = [] }) {
     const url = `${this.api.baseURL}/api/ai/stream`
+    const body = { query, session_id: sessionId }
+    if (images.length > 0) {
+      body.images = images
+    }
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         ...this.api.getAuthHeader(),
       },
-      body: JSON.stringify({ query, session_id: sessionId }),
+      body: JSON.stringify(body),
     })
 
     if (!response.ok) {

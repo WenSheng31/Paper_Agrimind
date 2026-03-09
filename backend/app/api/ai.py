@@ -70,9 +70,15 @@ POOL_SIZE = 3
 
 # ============== Pydantic 模型 ==============
 
+class ImageData(BaseModel):
+    data: str  # base64 encoded
+    media_type: str = "image/jpeg"  # image/jpeg, image/png, image/gif, image/webp
+
+
 class QueryRequest(BaseModel):
     query: str
     session_id: str
+    images: list[ImageData] = []
 
 
 class ToolUsage(BaseModel):
@@ -231,10 +237,29 @@ class MCPClient:
             await self._release(session)
         return [{"name": t.name, "description": t.description} for t in response.tools]
 
-    async def process_query(self, query: str, session_id: str) -> tuple[str, list[ToolUsage]]:
+    def _build_user_content(self, query: str, images: list[ImageData] = None) -> list[dict] | str:
+        """組合用戶訊息內容（文字 + 圖片）"""
+        if not images:
+            return query
+
+        content = []
+        for img in images:
+            content.append({
+                "type": "image",
+                "source": {
+                    "type": "base64",
+                    "media_type": img.media_type,
+                    "data": img.data,
+                },
+            })
+        content.append({"type": "text", "text": query})
+        return content
+
+    async def process_query(self, query: str, session_id: str, images: list[ImageData] = None) -> tuple[str, list[ToolUsage]]:
         """處理用戶查詢（一次性回應，供 AiSummary 使用）"""
         history = self._get_history(session_id)
-        history.append({"role": "user", "content": query})
+        user_content = self._build_user_content(query, images)
+        history.append({"role": "user", "content": user_content})
         available_tools = await self._list_tools()
 
         all_tool_usages = []
@@ -263,10 +288,11 @@ class MCPClient:
 
             history.append({"role": "user", "content": tool_results})
 
-    async def process_query_stream(self, query: str, session_id: str):
+    async def process_query_stream(self, query: str, session_id: str, images: list[ImageData] = None):
         """處理用戶查詢（SSE 串流模式），yield SSE 事件字串"""
         history = self._get_history(session_id)
-        history.append({"role": "user", "content": query})
+        user_content = self._build_user_content(query, images)
+        history.append({"role": "user", "content": user_content})
         available_tools = await self._list_tools()
 
         all_tool_usages = []
@@ -323,7 +349,7 @@ router = APIRouter(prefix="/api/ai", tags=["AI"])
 async def query_ai(request: QueryRequest, _user=Depends(get_current_user)):
     """向 AI 發送查詢並獲取回應"""
     try:
-        response, tool_usages = await mcp_client.process_query(request.query, request.session_id)
+        response, tool_usages = await mcp_client.process_query(request.query, request.session_id, request.images or None)
         return QueryResponse(response=response, session_id=request.session_id, tool_used=tool_usages)
     except Exception as e:
         logger.error(f"AI query failed: {e}")
@@ -335,7 +361,7 @@ async def stream_ai(request: QueryRequest, _user=Depends(get_current_user)):
     """向 AI 發送查詢並以 SSE 串流回應"""
     async def event_generator():
         try:
-            async for event in mcp_client.process_query_stream(request.query, request.session_id):
+            async for event in mcp_client.process_query_stream(request.query, request.session_id, request.images or None):
                 yield event
         except Exception as e:
             logger.error(f"AI stream failed: {e}")

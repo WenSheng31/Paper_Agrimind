@@ -99,6 +99,15 @@
                   : 'border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200',
               ]"
             >
+              <!-- 顯示用戶上傳的圖片 -->
+              <div v-if="msg.images && msg.images.length > 0" class="mb-2 flex flex-wrap gap-2">
+                <img
+                  v-for="(src, idx) in msg.images"
+                  :key="idx"
+                  :src="src"
+                  class="max-h-40 rounded border border-slate-200 object-contain dark:border-slate-700"
+                />
+              </div>
               <div
                 v-html="renderMarkdown(msg.content)"
                 class="prose prose-sm prose-p:leading-relaxed prose-p:first:mt-0 prose-p:last:mb-0
@@ -185,7 +194,47 @@
 
         <!-- 輸入區 -->
         <div class="shrink-0 bg-slate-50 p-4 dark:bg-slate-900">
+          <!-- 圖片預覽 -->
+          <div v-if="pendingImages.length > 0" class="mb-2 flex gap-2 overflow-x-auto">
+            <div
+              v-for="(img, idx) in pendingImages"
+              :key="idx"
+              class="group relative h-16 w-16 shrink-0 overflow-hidden rounded border border-slate-200
+                dark:border-slate-700"
+            >
+              <img :src="img.preview" class="h-full w-full object-cover" />
+              <button
+                @click="removeImage(idx)"
+                class="absolute inset-0 flex cursor-pointer items-center justify-center bg-black/50
+                  opacity-0 transition group-hover:opacity-100"
+              >
+                <X :size="16" class="text-white" />
+              </button>
+            </div>
+          </div>
+
           <form @submit.prevent="sendMessage" class="flex items-center gap-2">
+            <!-- 隱藏的檔案輸入 -->
+            <input
+              ref="fileInput"
+              type="file"
+              accept="image/jpeg,image/png,image/gif,image/webp"
+              multiple
+              class="hidden"
+              @change="handleFileSelect"
+            />
+            <!-- 圖片上傳按鈕 -->
+            <button
+              type="button"
+              @click="fileInput?.click()"
+              :disabled="loading"
+              class="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full
+                bg-slate-200 text-slate-600 transition hover:bg-emerald-100 hover:text-emerald-600
+                disabled:cursor-not-allowed disabled:opacity-40
+                dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-emerald-900 dark:hover:text-emerald-400"
+            >
+              <ImagePlus :size="20" />
+            </button>
             <input
               ref="inputField"
               v-model="inputMessage"
@@ -212,7 +261,7 @@
             </button>
             <button
               type="submit"
-              :disabled="loading || !inputMessage.trim()"
+              :disabled="loading || (!inputMessage.trim() && pendingImages.length === 0)"
               class="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full
                 bg-emerald-600 text-white transition hover:bg-emerald-700
                 disabled:cursor-not-allowed disabled:opacity-40"
@@ -231,7 +280,7 @@ import { ref, nextTick, onMounted, onUnmounted, watch } from 'vue'
 import { aiAPI } from '@/services/api'
 import { useToast } from '@/composables/useToast'
 import { useMarkdown } from '@/composables/useMarkdown'
-import { X, Bot, Mic, MicOff, SendHorizontal, Copy, Check } from 'lucide-vue-next'
+import { X, Bot, Mic, MicOff, SendHorizontal, Copy, Check, ImagePlus } from 'lucide-vue-next'
 
 const { showToast } = useToast()
 const { render: renderMarkdown } = useMarkdown()
@@ -246,6 +295,8 @@ const expandedTools = ref({})
 const copiedMsgId = ref(null)
 const showTooltip = ref(false)
 const streamingToolName = ref('')
+const pendingImages = ref([])
+const fileInput = ref(null)
 
 // 語音輸入
 const isListening = ref(false)
@@ -305,6 +356,35 @@ const suggestedQuestions = [
 const sendSuggestion = (question) => {
   inputMessage.value = question
   sendMessage()
+}
+
+// 圖片處理
+const handleFileSelect = (event) => {
+  const files = Array.from(event.target.files)
+  for (const file of files) {
+    if (!file.type.startsWith('image/')) continue
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('圖片大小不能超過 5MB', 'error')
+      continue
+    }
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const dataUrl = e.target.result
+      const base64 = dataUrl.split(',')[1]
+      pendingImages.value.push({
+        preview: dataUrl,
+        data: base64,
+        media_type: file.type,
+      })
+    }
+    reader.readAsDataURL(file)
+  }
+  // 清空 input 讓同一檔案可以再次選取
+  event.target.value = ''
+}
+
+const removeImage = (idx) => {
+  pendingImages.value.splice(idx, 1)
 }
 
 // 每次頁面刷新生成新的 session ID
@@ -371,15 +451,18 @@ onUnmounted(() => {
 
 // 發送訊息（串流模式）
 const sendMessage = async () => {
-  if (!inputMessage.value.trim() || loading.value) return
+  if ((!inputMessage.value.trim() && pendingImages.value.length === 0) || loading.value) return
 
-  const userMessage = inputMessage.value.trim()
+  const userMessage = inputMessage.value.trim() || '請分析這張圖片'
+  const imagesToSend = [...pendingImages.value]
   inputMessage.value = ''
+  pendingImages.value = []
 
   messages.value.push({
     id: ++messageId,
     role: 'user',
     content: userMessage,
+    images: imagesToSend.map((img) => img.preview),
   })
 
   await scrollToBottom()
@@ -392,8 +475,15 @@ const sendMessage = async () => {
   let assistantAdded = false
   let pendingToolArgs = null
 
+  // 準備圖片資料
+  const apiImages = imagesToSend.map((img) => ({
+    data: img.data,
+    media_type: img.media_type,
+  }))
+
   try {
     await aiAPI.chatStream(userMessage, sessionId, {
+      images: apiImages,
       onToolStart(data) {
         streamingToolName.value = data.name
         pendingToolArgs = data.args

@@ -3,7 +3,7 @@
     <!-- 標題列 -->
     <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
       <h1 class="text-3xl font-bold text-slate-800 dark:text-white">影像紀錄</h1>
-      <div class="flex items-center gap-3">
+      <div id="image-records-filter" class="flex items-center gap-3">
         <select
           v-model="selectedFarmId"
           @change="onFilterChange"
@@ -35,7 +35,7 @@
     </div>
 
     <!-- 卡片 Grid -->
-    <div v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div id="image-records-grid" v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       <div
         v-for="record in records"
         :key="record.id"
@@ -127,6 +127,9 @@ import { Plus, Camera, Image as ImageIcon } from 'lucide-vue-next'
 import SafeImage from '@/components/common/SafeImage.vue'
 import CreateImageRecordModal from '@/components/image-record/CreateImageRecordModal.vue'
 import ImageRecordDetailModal from '@/components/image-record/ImageRecordDetailModal.vue'
+import { useOnboardingTour } from '@/composables/useOnboardingTour'
+
+const { startTour } = useOnboardingTour('imageRecords')
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
@@ -192,8 +195,8 @@ function onRecordDeleted() {
   loadRecords()
 }
 
-onMounted(() => {
-  loadFarms()
-  loadRecords()
+onMounted(async () => {
+  await Promise.all([loadFarms(), loadRecords()])
+  setTimeout(() => startTour(), 500)
 })
 </script>

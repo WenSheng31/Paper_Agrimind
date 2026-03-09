@@ -5,6 +5,7 @@
       <h1 class="text-3xl font-bold text-slate-800 dark:text-white">知識庫</h1>
       <button
         v-if="isAdmin"
+        id="knowledge-upload-btn"
         @click="showUploadModal = true"
         class="flex cursor-pointer items-center gap-2 rounded bg-emerald-600 px-4 py-2 text-white
           transition hover:bg-emerald-700"
@@ -25,7 +26,7 @@
 
     <!-- 文件列表 -->
     <div v-else>
-      <div class="overflow-x-auto rounded border border-slate-200 dark:border-slate-700">
+      <div id="knowledge-table" class="overflow-x-auto rounded border border-slate-200 dark:border-slate-700">
         <table class="w-full text-left text-sm">
           <thead class="bg-slate-50 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
             <tr>
@@ -156,6 +157,9 @@ import { storeToRefs } from 'pinia'
 import api from '@/services/api'
 import { Plus, BookOpen, Trash2 } from 'lucide-vue-next'
 import UploadKnowledgeModal from '@/components/knowledge/UploadKnowledgeModal.vue'
+import { useOnboardingTour } from '@/composables/useOnboardingTour'
+
+const { startTour } = useOnboardingTour('knowledge')
 
 const authStore = useAuthStore()
 const { isAdmin } = storeToRefs(authStore)
@@ -231,7 +235,8 @@ async function confirmDelete() {
   }
 }
 
-onMounted(() => {
-  loadDocuments()
+onMounted(async () => {
+  await loadDocuments()
+  setTimeout(() => startTour(), 500)
 })
 </script>

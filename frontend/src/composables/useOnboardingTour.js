@@ -64,10 +64,68 @@ const tours = {
     {
       element: '#farm-tabs',
       popover: {
-        title: '感測器與農務記錄',
-        description: '切換查看感測器數據（溫度、濕度、土壤等）和農務操作記錄。',
+        title: '感測器、農務與影像紀錄',
+        description: '切換查看感測器數據、農務操作記錄，以及田間影像紀錄與 AI 分析。',
         side: 'top',
         align: 'start',
+      },
+    },
+  ],
+  knowledge: [
+    {
+      element: '#knowledge-upload-btn',
+      popover: {
+        title: '新增知識',
+        description: '上傳文字或 PDF 文件，系統會自動分段並建立向量索引，供 AI 助手搜尋參考。',
+        side: 'bottom',
+        align: 'end',
+      },
+    },
+    {
+      element: '#knowledge-table',
+      popover: {
+        title: '知識文件列表',
+        description: '點擊標題可展開查看文件片段內容，也可刪除不需要的文件。',
+        side: 'top',
+        align: 'start',
+      },
+    },
+    {
+      element: '#ai-chat-btn',
+      popover: {
+        title: 'AI 助手',
+        description: 'AI 助手會自動搜尋知識庫中的相關內容來回答你的問題。',
+        side: 'left',
+        align: 'end',
+      },
+    },
+  ],
+  imageRecords: [
+    {
+      element: '#image-records-filter',
+      popover: {
+        title: '農場篩選',
+        description: '選擇特定農場來篩選影像紀錄，或查看所有農場的紀錄。',
+        side: 'bottom',
+        align: 'end',
+      },
+    },
+    {
+      element: '#image-records-grid',
+      popover: {
+        title: '影像紀錄列表',
+        description: '點擊卡片查看詳情，AI 會自動分析圖片中的作物狀況並給出建議。',
+        side: 'top',
+        align: 'start',
+      },
+    },
+    {
+      element: '#ai-chat-btn',
+      popover: {
+        title: 'AI 助手',
+        description: 'AI 助手也能查詢影像紀錄並分析圖片，試試問它農場的作物狀況。',
+        side: 'left',
+        align: 'end',
       },
     },
   ],

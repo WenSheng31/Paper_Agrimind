@@ -15,6 +15,7 @@ class Farm(Base):
     # 關聯
     sensor_data = relationship("SensorData", back_populates="farm", cascade="all, delete-orphan")
     operations = relationship("Operation", back_populates="farm", cascade="all, delete-orphan")
+    image_records = relationship("ImageRecord", back_populates="farm", cascade="all, delete-orphan")
 
 
 class SensorData(Base):
@@ -52,4 +53,30 @@ class Operation(Base):
 
     # 關聯
     farm = relationship("Farm", back_populates="operations")
-    operator = relationship("User") # 我們需要 import User，這裡用字串關聯也可以，但通常在 __init__ 處理
+    operator = relationship("User")
+
+
+class ImageRecord(Base):
+    __tablename__ = "image_records"
+
+    id = Column(Integer, primary_key=True, index=True)
+    farm_id = Column(Integer, ForeignKey("farms.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    description = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    farm = relationship("Farm", back_populates="image_records")
+    images = relationship("ImageRecordFile", back_populates="record", cascade="all, delete-orphan")
+    creator = relationship("User")
+
+
+class ImageRecordFile(Base):
+    __tablename__ = "image_record_files"
+
+    id = Column(Integer, primary_key=True, index=True)
+    record_id = Column(Integer, ForeignKey("image_records.id"), nullable=False, index=True)
+    filename = Column(String, nullable=False)
+    original_filename = Column(String, nullable=False)
+    file_size = Column(Integer, nullable=False)
+
+    record = relationship("ImageRecord", back_populates="images")

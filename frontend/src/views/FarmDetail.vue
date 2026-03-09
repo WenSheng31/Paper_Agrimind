@@ -51,7 +51,7 @@
       <AiSummary
         id="farm-ai-summary"
         class="mb-4"
-        :prompt="`查詢農場「${farm.name}」(ID: ${farm.id}) 最新的感測器資料與農務記錄，給出該農場的狀態總結與建議。字數控制在150字內。`"
+        :prompt="`查詢農場「${farm.name}」(ID: ${farm.id}) 最新的感測器資料、農務記錄與影像紀錄，給出該農場的狀態總結與建議。如果有影像紀錄，請分析最新一筆的圖片。字數控制在200字內。`"
         :cache-key="`farm-${farm.id}-summary`"
       />
 
@@ -89,6 +89,19 @@
             >
               農務記錄
             </button>
+            <button
+              @click="activeTab = 'images'"
+              :class="[
+                'cursor-pointer px-6 py-3 font-medium transition',
+                activeTab === 'images'
+                  ? `border-b-2 border-emerald-600 text-emerald-600 dark:border-emerald-400
+                    dark:text-emerald-400`
+                  : `text-slate-600 hover:text-slate-800 dark:text-slate-400
+                    dark:hover:text-slate-200`,
+              ]"
+            >
+              影像紀錄
+            </button>
           </div>
         </div>
 
@@ -97,6 +110,7 @@
           <KeepAlive>
             <FarmSensorTab v-if="activeTab === 'sensor'" :farm-id="farm.id" />
             <FarmOperationsTab v-else-if="activeTab === 'operations'" :farm-id="farm.id" />
+            <FarmImageRecordsTab v-else-if="activeTab === 'images'" :farm-id="farm.id" :farm-name="farm.name" />
           </KeepAlive>
         </div>
       </div>
@@ -129,6 +143,7 @@ import { ChevronLeft } from 'lucide-vue-next'
 import EditFarmModal from '@/components/farm/EditFarmModal.vue'
 import FarmSensorTab from '@/components/farm/FarmSensorTab.vue'
 import FarmOperationsTab from '@/components/farm/FarmOperationsTab.vue'
+import FarmImageRecordsTab from '@/components/farm/FarmImageRecordsTab.vue'
 import AiSummary from '@/components/ai/AiSummary.vue'
 import { useOnboardingTour } from '@/composables/useOnboardingTour'
 

@@ -48,6 +48,11 @@ const router = createRouter({
           name: 'knowledge',
           component: () => import('@/views/Knowledge.vue'),
         },
+        {
+          path: 'image-records',
+          name: 'image-records',
+          component: () => import('@/views/ImageRecords.vue'),
+        },
       ],
     },
 

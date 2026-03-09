@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     BACKEND_CORS_ORIGINS: str = '["http://localhost:5173"]'
     ANTHROPIC_API_KEY: str = "",
     CWA_API_KEY: str = ""
+    UPLOAD_DIR: str = "./uploads"
+    MCP_POOL_SIZE: int = 10
 
     class Config:
         env_file = ".env"

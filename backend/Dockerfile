@@ -22,6 +22,8 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 
 COPY . .
 
+RUN mkdir -p /app/uploads
+
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 

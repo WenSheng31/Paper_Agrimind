@@ -1,6 +1,8 @@
 import sys
 import os
 import json
+import base64
+import mimetypes
 import requests
 from contextlib import contextmanager
 from datetime import datetime, timedelta
@@ -13,7 +15,7 @@ from fastmcp import FastMCP
 from sqlalchemy import create_engine, func, and_, desc, asc
 from sqlalchemy.orm import sessionmaker, aliased
 from dotenv import load_dotenv
-from app.models.agriculture import Farm, SensorData, Operation
+from app.models.agriculture import Farm, SensorData, Operation, ImageRecord, ImageRecordFile
 from app.models.knowledge import KnowledgeDocument
 from app.services.embedding import get_embedding
 from app.core.config import settings
@@ -831,6 +833,210 @@ def search_knowledge(query: str, top_k: int = 5) -> Dict[str, Any]:
 
         except Exception as e:
             return {"error": f"搜尋知識庫失敗: {str(e)}"}
+
+
+# ============== 影像紀錄工具 ==============
+
+@mcp.tool()
+def query_image_records(
+    farm_id: Optional[int] = None,
+    farm_name: Optional[str] = None,
+    limit: int = 20,
+) -> Dict[str, Any]:
+    """
+    查詢影像紀錄列表（僅文字資訊，不含圖片）。
+
+    用於了解系統中有哪些田間影像紀錄，找到感興趣的紀錄後，
+    可使用 analyze_image_record 工具對特定紀錄的圖片進行視覺分析。
+
+    參數：
+    - farm_id: 按農場 ID 篩選（選填）
+    - farm_name: 按農場名稱模糊搜尋（選填）
+    - limit: 回傳筆數上限，預設 20，最大 100
+
+    回傳：紀錄 ID、農場名稱、描述、圖片數量、建立時間
+    """
+    limit = min(limit, 100)
+
+    with get_db() as db:
+        try:
+            query = db.query(ImageRecord).join(Farm, ImageRecord.farm_id == Farm.id)
+
+            if farm_id:
+                query = query.filter(ImageRecord.farm_id == farm_id)
+            if farm_name:
+                safe_name = farm_name.strip().replace("%", r"\%").replace("_", r"\_")
+                query = query.filter(Farm.name.like(f"%{safe_name}%", escape="\\"))
+
+            records = query.order_by(desc(ImageRecord.created_at)).limit(limit).all()
+
+            if not records:
+                return {"message": "沒有找到影像紀錄", "results": []}
+
+            results = []
+            for r in records:
+                img_count = db.query(func.count(ImageRecordFile.id)).filter(
+                    ImageRecordFile.record_id == r.id
+                ).scalar()
+                results.append({
+                    "id": r.id,
+                    "farm_name": r.farm.name if r.farm else None,
+                    "description": r.description,
+                    "image_count": img_count,
+                    "created_at": r.created_at.isoformat() if r.created_at else None,
+                })
+
+            return {"count": len(results), "results": results}
+
+        except Exception as e:
+            return {"error": f"查詢失敗: {str(e)}"}
+
+
+@mcp.tool()
+def get_latest_image_per_farm() -> Dict[str, Any]:
+    """
+    取得每個農場最新的一筆影像紀錄（僅文字資訊，不含圖片）。
+
+    一次查出所有農場各自最新的影像紀錄，適合用於整體狀態總覽。
+    如需分析特定紀錄的圖片，再使用 analyze_image_record 工具。
+
+    回傳：每個農場最新紀錄的 ID、農場名稱、描述、圖片數量、建立時間
+    """
+    with get_db() as db:
+        try:
+            # 子查詢：每個農場最新的 image_record created_at
+            latest_sub = (
+                db.query(
+                    ImageRecord.farm_id,
+                    func.max(ImageRecord.created_at).label("max_created"),
+                )
+                .group_by(ImageRecord.farm_id)
+                .subquery()
+            )
+
+            records = (
+                db.query(ImageRecord)
+                .join(
+                    latest_sub,
+                    and_(
+                        ImageRecord.farm_id == latest_sub.c.farm_id,
+                        ImageRecord.created_at == latest_sub.c.max_created,
+                    ),
+                )
+                .all()
+            )
+
+            if not records:
+                return {"message": "沒有任何影像紀錄", "results": []}
+
+            results = []
+            for r in records:
+                img_count = db.query(func.count(ImageRecordFile.id)).filter(
+                    ImageRecordFile.record_id == r.id
+                ).scalar()
+                results.append({
+                    "id": r.id,
+                    "farm_id": r.farm_id,
+                    "farm_name": r.farm.name if r.farm else None,
+                    "description": r.description,
+                    "image_count": img_count,
+                    "created_at": r.created_at.isoformat() if r.created_at else None,
+                })
+
+            return {"count": len(results), "results": results}
+
+        except Exception as e:
+            return {"error": f"查詢失敗: {str(e)}"}
+
+
+@mcp.tool()
+def analyze_image_record(record_id: int) -> Dict[str, Any]:
+    """
+    對指定影像紀錄的圖片進行 AI 視覺分析。
+
+    讀取該紀錄的所有圖片，使用 Claude Vision 進行分析，回傳分析結果文字。
+    適合用於辨識作物、判斷病蟲害、評估生長狀況等。
+
+    建議先用 query_image_records 找到紀錄 ID，再呼叫此工具。
+    分析完成後，可搭配 search_knowledge 搜尋知識庫，提供更完整的建議。
+
+    參數：
+    - record_id: 影像紀錄 ID（必填）
+    """
+    with get_db() as db:
+        try:
+            record = db.query(ImageRecord).filter(ImageRecord.id == record_id).first()
+            if not record:
+                return {"error": f"找不到 ID 為 {record_id} 的影像紀錄"}
+
+            images = db.query(ImageRecordFile).filter(
+                ImageRecordFile.record_id == record_id
+            ).all()
+
+            if not images:
+                return {"error": "該紀錄沒有圖片"}
+
+            farm_name = record.farm.name if record.farm else "未知農場"
+
+            # 讀取圖片轉 base64
+            image_contents = []
+            record_dir = os.path.join(settings.UPLOAD_DIR, "image-records", str(record_id))
+            for img in images:
+                file_path = os.path.join(record_dir, img.filename)
+                if not os.path.isfile(file_path):
+                    continue
+                with open(file_path, "rb") as f:
+                    data = base64.b64encode(f.read()).decode("utf-8")
+                ext = os.path.splitext(img.filename)[1].lower()
+                media_type = mimetypes.types_map.get(ext, "image/jpeg")
+                image_contents.append({
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": media_type,
+                        "data": data,
+                    },
+                })
+
+            if not image_contents:
+                return {"error": "圖片檔案不存在"}
+
+            # 組 prompt
+            prompt = "請分析這些農業田間照片，提供以下資訊：\n"
+            prompt += "1. 作物辨識與生長階段\n"
+            prompt += "2. 健康狀況評估（是否有病蟲害跡象）\n"
+            prompt += "3. 土壤與環境觀察\n"
+            prompt += "4. 建議的管理措施\n\n"
+            prompt += "請以繁體中文回答，簡潔實用。"
+
+            if record.description:
+                prompt = f"使用者描述：{record.description}\n\n{prompt}"
+            prompt = f"農場：{farm_name}\n{prompt}"
+
+            # 呼叫 Claude Vision
+            import anthropic
+            client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
+
+            content = image_contents + [{"type": "text", "text": prompt}]
+
+            response = client.messages.create(
+                model="claude-haiku-4-5-20251001",
+                max_tokens=1500,
+                messages=[{"role": "user", "content": content}],
+            )
+
+            analysis_text = response.content[0].text if response.content else "分析失敗"
+
+            return {
+                "record_id": record_id,
+                "farm_name": farm_name,
+                "description": record.description,
+                "image_count": len(image_contents),
+                "analysis": analysis_text,
+            }
+
+        except Exception as e:
+            return {"error": f"分析失敗: {str(e)}"}
 
 
 if __name__ == "__main__":

@@ -32,7 +32,7 @@ class ApiService {
 
         throw {
           status: response.status,
-          message: response.status === 401 ? '登入已過期，請重新登入' : (data?.detail || '請求失敗'),
+          message: data?.detail || (response.status === 401 ? '登入已過期，請重新登入' : '請求失敗'),
           data,
         }
       }
@@ -149,6 +149,78 @@ class ApiService {
 
   async deleteOperation(opId) {
     return this.request(`/api/agriculture/operations/${opId}`, {
+      method: 'DELETE',
+    })
+  }
+
+  // ===== Image Record API =====
+  async getImageRecords(page = 1, pageSize = 12, farmId = null) {
+    const params = new URLSearchParams({ page, page_size: pageSize })
+    if (farmId) params.append('farm_id', farmId)
+    return this.request(`/api/image-records?${params}`)
+  }
+
+  async getImageRecord(id) {
+    return this.request(`/api/image-records/${id}`)
+  }
+
+  async createImageRecord(farmId, description, files) {
+    const formData = new FormData()
+    formData.append('farm_id', farmId)
+    if (description) formData.append('description', description)
+    for (const file of files) {
+      formData.append('files', file)
+    }
+    const url = `${this.baseURL}/api/image-records`
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: this.getAuthHeader(),
+      body: formData,
+    })
+    const data = await response.json().catch(() => null)
+    if (!response.ok) {
+      throw { status: response.status, message: data?.detail || '上傳失敗' }
+    }
+    return data
+  }
+
+  async updateImageRecord(id, updateData) {
+    return this.request(`/api/image-records/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(updateData),
+    })
+  }
+
+  async deleteImageRecord(id) {
+    return this.request(`/api/image-records/${id}`, {
+      method: 'DELETE',
+    })
+  }
+
+  async addImageRecordImages(recordId, files) {
+    const formData = new FormData()
+    for (const file of files) {
+      formData.append('files', file)
+    }
+    const url = `${this.baseURL}/api/image-records/${recordId}/images`
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: this.getAuthHeader(),
+      body: formData,
+    })
+    const data = await response.json().catch(() => null)
+    if (!response.ok) {
+      throw { status: response.status, message: data?.detail || '上傳失敗' }
+    }
+    return data
+  }
+
+  async analyzeImageRecord(recordId) {
+    return this.request(`/api/image-records/${recordId}/analysis`)
+  }
+
+  async deleteImageRecordImage(recordId, imageId) {
+    return this.request(`/api/image-records/${recordId}/images/${imageId}`, {
       method: 'DELETE',
     })
   }

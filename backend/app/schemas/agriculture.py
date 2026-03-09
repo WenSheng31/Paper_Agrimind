@@ -103,6 +103,31 @@ class FarmUpdate(BaseModel):
 class FarmResponse(FarmBase):
     id: int
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
+
+# --- ImageRecord Schemas ---
+class ImageFileResponse(BaseModel):
+    id: int
+    filename: str
+    original_filename: str
+    file_size: int
+
+    class Config:
+        from_attributes = True
+
+class ImageRecordResponse(BaseModel):
+    id: int
+    farm_id: int
+    user_id: Optional[int] = None
+    description: Optional[str] = None
+    created_at: datetime
+    images: List[ImageFileResponse] = []
+    farm_name: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class ImageRecordUpdate(BaseModel):
+    description: Optional[str] = None

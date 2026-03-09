@@ -38,8 +38,8 @@
                 :key="currentImage.id"
                 :src="getImageUrl(currentImage.filename, record.id)"
                 :alt="currentImage.original_filename"
-                container-class="mb-2 rounded-lg min-h-40 bg-slate-100 dark:bg-slate-700"
-                img-class="mx-auto max-h-80 object-contain"
+                container-class="mb-2 rounded-lg h-60 sm:h-80 bg-slate-100 dark:bg-slate-700"
+                img-class="mx-auto h-full object-contain"
                 spinner-class="h-8 w-8 border-4 border-slate-300"
                 :error-icon-size="40"
                 :show-error-text="true"
@@ -66,7 +66,7 @@
                     v-if="isAdmin && record.images.length > 1"
                     @click="removeImage(img.id)"
                     class="absolute -top-1 -right-1 flex h-5 w-5 cursor-pointer items-center justify-center
-                      rounded-full bg-red-500 text-xs text-white opacity-0 transition group-hover:opacity-100"
+                      rounded-full bg-red-500 text-xs text-white opacity-100 lg:opacity-0 transition lg:group-hover:opacity-100"
                   >
                     &times;
                   </button>

@@ -73,21 +73,21 @@ const tours = {
   ],
   knowledge: [
     {
-      element: '#knowledge-upload-btn',
-      popover: {
-        title: '新增知識',
-        description: '上傳文字或 PDF 文件，系統會自動分段並建立向量索引，供 AI 助手搜尋參考。',
-        side: 'bottom',
-        align: 'end',
-      },
-    },
-    {
       element: '#knowledge-table',
       popover: {
         title: '知識文件列表',
         description: '點擊標題可展開查看文件片段內容，也可刪除不需要的文件。',
         side: 'top',
         align: 'start',
+      },
+    },
+    {
+      element: '#knowledge-upload-btn',
+      popover: {
+        title: '新增知識',
+        description: '上傳文字或 PDF 文件，系統會自動分段並建立向量索引，供 AI 助手搜尋參考。',
+        side: 'bottom',
+        align: 'end',
       },
     },
     {

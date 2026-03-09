@@ -16,7 +16,7 @@
               v-model="farmId"
               required
               class="w-full rounded border border-slate-300 bg-white px-3 py-2 text-slate-700
-                dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200"
+                dark:border-slate-600 dark:bg-slate-950 dark:text-white"
             >
               <option value="" disabled>請選擇農場</option>
               <option v-for="farm in farms" :key="farm.id" :value="farm.id">{{ farm.name }}</option>
@@ -31,7 +31,7 @@
               rows="2"
               placeholder="例如：稻田第二期插秧後第三週"
               class="w-full rounded border border-slate-300 px-3 py-2 text-slate-700
-                dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200"
+                dark:border-slate-600 dark:bg-slate-950 dark:text-white"
             ></textarea>
           </div>
 

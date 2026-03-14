@@ -165,10 +165,14 @@
             </div>
               <!-- 複製按鈕 -->
               <button
-                v-if="msg.role === 'assistant' && msg.content"
+                v-if="msg.content"
                 @click="copyMessage(msg)"
-                class="mb-1 ml-2 flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full
-                  bg-emerald-600 text-white transition hover:bg-emerald-700"
+                :class="[
+                  'mb-1 flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full transition',
+                  msg.role === 'user'
+                    ? 'mr-2 order-first bg-emerald-700 text-white hover:bg-emerald-800'
+                    : 'ml-2 bg-emerald-600 text-white hover:bg-emerald-700',
+                ]"
                 :title="copiedMsgId === msg.id ? '已複製' : '複製'"
               >
                 <Check v-if="copiedMsgId === msg.id" :size="18" class="text-emerald-500" />

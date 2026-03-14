@@ -120,6 +120,7 @@ dist/
 dist-ssr/
 build/
 .output/
+backend/uploads
 
 # Logs
 logs

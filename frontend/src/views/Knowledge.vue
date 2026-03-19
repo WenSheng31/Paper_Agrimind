@@ -48,7 +48,7 @@
                   {{ doc.title }}
                 </button>
               </td>
-              <td class="px-4 py-3 text-slate-600 dark:text-slate-400">{{ doc.source_filename || '-' }}</td>
+              <td class="px-4 py-3 text-slate-600 dark:text-slate-400">{{ doc.source_filename ? doc.source_filename.replace(/\.[^.]+$/, '') : '-' }}</td>
               <td class="px-4 py-3 text-slate-600 dark:text-slate-400">{{ doc.chunk_count }}</td>
               <td class="px-4 py-3 text-slate-600 dark:text-slate-400">{{ formatDate(doc.created_at) }}</td>
               <td v-if="isAdmin" class="px-4 py-3">

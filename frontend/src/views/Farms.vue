@@ -55,8 +55,8 @@
         <p class="mb-2 text-slate-600 dark:text-slate-400">
           <span class="font-medium">位置：</span>{{ farm.location || '未設定' }}
         </p>
-        <p class="line-clamp-2 text-sm text-slate-600 dark:text-slate-400">
-          {{ farm.description || '無描述' }}
+        <p v-if="farm.description" class="line-clamp-2 text-sm text-slate-600 dark:text-slate-400">
+          {{ farm.description }}
         </p>
         <div class="mt-4 border-t border-slate-200 pt-4 dark:border-slate-700">
           <p class="text-sm text-slate-500 dark:text-slate-500">建立時間：{{ formatDate(farm.created_at) }}</p>

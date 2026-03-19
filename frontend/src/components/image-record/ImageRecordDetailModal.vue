@@ -127,7 +127,7 @@
               <h3 class="mb-1 text-sm font-medium text-slate-500 dark:text-slate-400">描述</h3>
               <div v-if="!editing">
                 <p class="text-slate-700 dark:text-slate-300">
-                  {{ record.description || '無描述' }}
+                  {{ record.description || '' }}
                 </p>
               </div>
               <div v-else>

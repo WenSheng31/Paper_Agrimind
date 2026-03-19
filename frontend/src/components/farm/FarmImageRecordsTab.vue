@@ -42,8 +42,8 @@
             <div class="mb-2 flex items-center gap-2">
               <span class="text-xs text-slate-400">{{ record.images.length }} 張</span>
             </div>
-            <p class="line-clamp-2 text-sm text-slate-600 dark:text-slate-400">
-              {{ record.description || '無描述' }}
+            <p v-if="record.description" class="line-clamp-2 text-sm text-slate-600 dark:text-slate-400">
+              {{ record.description }}
             </p>
             <div class="mt-4 border-t border-slate-200 pt-4 dark:border-slate-700">
               <p class="text-sm text-slate-500 dark:text-slate-500">{{ formatDate(record.created_at) }}</p>

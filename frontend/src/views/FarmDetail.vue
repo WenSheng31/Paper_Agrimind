@@ -38,7 +38,7 @@
               編輯
             </button>
           </div>
-          <p class="text-slate-600 dark:text-slate-400">{{ farm.description || '無描述' }}</p>
+          <p v-if="farm.description" class="text-slate-600 dark:text-slate-400">{{ farm.description }}</p>
           <div class="mt-4 border-t border-slate-200 pt-4 dark:border-slate-700">
             <p class="text-sm text-slate-500 dark:text-slate-500">
               建立時間：{{ formatDate(farm.created_at) }}

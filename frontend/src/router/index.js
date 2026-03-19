@@ -53,6 +53,18 @@ const router = createRouter({
           name: 'image-records',
           component: () => import('@/views/ImageRecords.vue'),
         },
+        {
+          path: 'chat-logs',
+          name: 'chat-logs',
+          component: () => import('@/views/ChatLogs.vue'),
+          meta: { requiresAdmin: true },
+        },
+        {
+          path: 'chat-logs/:sessionId',
+          name: 'chat-log-detail',
+          component: () => import('@/views/ChatLogDetail.vue'),
+          meta: { requiresAdmin: true },
+        },
       ],
     },
 
@@ -83,6 +95,12 @@ router.beforeEach(async (to, from, next) => {
     // 需要認證的路由
     if (to.meta.requiresAuth && !authStore.isAuthenticated) {
       next({ name: 'login' })
+      return
+    }
+
+    // 管理員限定的路由
+    if (to.meta.requiresAdmin && (!authStore.isAuthenticated || !authStore.isAdmin)) {
+      next({ name: 'home' })
       return
     }
 

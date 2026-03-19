@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from .database import engine, Base, SessionLocal
 from ..models.user import User
 from ..models.knowledge import KnowledgeDocument
+from ..models.chat_log import ChatLog
 from .security import get_password_hash
 
 

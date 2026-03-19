@@ -171,6 +171,9 @@ def query_database(
     - fields: 要查詢的欄位列表，如 ["temperature", "humidity"]，不指定則返回所有欄位
     - filters: 篩選條件列表，格式為 [{"field": "欄位名", "op": "操作符", "value": "值"}]
               操作符可用: =, >, <, >=, <=, !=, like
+              重要：查詢農場名稱時，請優先使用 like 模糊比對而非 = 精確比對，
+              因為使用者說的名稱可能只是農場全名的一部分（如「草莓園」→「大湖草莓園」）
+              範例: [{"field": "name", "op": "like", "value": "草莓"}]
               範例: [{"field": "temperature", "op": ">", "value": 30}]
     - aggregation: 聚合設定，格式為 {"field": "欄位名", "func": "聚合函數"}
                    函數可用: avg（平均）, sum（總和）, max（最大）, min（最小）, count（計數）

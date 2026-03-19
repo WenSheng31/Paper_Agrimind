@@ -17,6 +17,8 @@ from mcp import ClientSession, StdioServerParameters
 from .auth import get_current_user
 from mcp.client.stdio import stdio_client
 from pydantic import BaseModel
+from ..core.database import SessionLocal
+from ..models.chat_log import ChatLog
 
 logger = logging.getLogger(__name__)
 
@@ -340,6 +342,29 @@ class MCPClient:
         yield f"event: done\ndata: {json.dumps(done_data, ensure_ascii=False)}\n\n"
 
 
+# ============== 對話紀錄儲存 ==============
+
+def _save_chat_log(user_id: int, session_id: str, role: str, content: str, tool_calls_json: str = None, images_json: str = None):
+    """儲存對話紀錄到資料庫，失敗不影響使用者"""
+    try:
+        db = SessionLocal()
+        try:
+            log = ChatLog(
+                user_id=user_id,
+                session_id=session_id,
+                role=role,
+                content=content,
+                tool_calls=tool_calls_json,
+                images=images_json,
+            )
+            db.add(log)
+            db.commit()
+        finally:
+            db.close()
+    except Exception as e:
+        logger.error(f"Failed to save chat log: {e}")
+
+
 # ============== 全域實例 & 路由 ==============
 
 mcp_client = MCPClient()
@@ -347,10 +372,27 @@ router = APIRouter(prefix="/api/ai", tags=["AI"])
 
 
 @router.post("/query", response_model=QueryResponse)
-async def query_ai(request: QueryRequest, _user=Depends(get_current_user)):
+async def query_ai(request: QueryRequest, user=Depends(get_current_user)):
     """向 AI 發送查詢並獲取回應"""
     try:
         response, tool_usages = await mcp_client.process_query(request.query, request.session_id, request.images or None)
+
+        # 儲存對話紀錄
+        images_json = None
+        if request.images:
+            images_json = json.dumps(
+                [{"data": img.data, "media_type": img.media_type} for img in request.images],
+                ensure_ascii=False,
+            )
+        _save_chat_log(user.id, request.session_id, "user", request.query, images_json=images_json)
+        tool_calls_json = None
+        if tool_usages:
+            tool_calls_json = json.dumps(
+                [{"name": t.tool_name, "args": t.tool_args, "output": t.tool_output} for t in tool_usages],
+                ensure_ascii=False,
+            )
+        _save_chat_log(user.id, request.session_id, "assistant", response, tool_calls_json=tool_calls_json)
+
         return QueryResponse(response=response, session_id=request.session_id, tool_used=tool_usages)
     except Exception as e:
         logger.error(f"AI query failed: {e}")
@@ -358,15 +400,38 @@ async def query_ai(request: QueryRequest, _user=Depends(get_current_user)):
 
 
 @router.post("/stream")
-async def stream_ai(request: QueryRequest, _user=Depends(get_current_user)):
+async def stream_ai(request: QueryRequest, user=Depends(get_current_user)):
     """向 AI 發送查詢並以 SSE 串流回應"""
     async def event_generator():
+        full_response = ""
+        all_tool_calls = []
         try:
             async for event in mcp_client.process_query_stream(request.query, request.session_id, request.images or None):
+                # 攔截事件累積完整回應
+                if event.startswith("event: text_delta\n"):
+                    data_line = event.split("data: ", 1)[1].split("\n")[0]
+                    data = json.loads(data_line)
+                    full_response += data.get("content", "")
+                elif event.startswith("event: done\n"):
+                    data_line = event.split("data: ", 1)[1].split("\n")[0]
+                    data = json.loads(data_line)
+                    all_tool_calls = data.get("tool_calls", [])
                 yield event
         except Exception as e:
             logger.error(f"AI stream failed: {e}")
             yield f"event: error\ndata: {json.dumps({'message': 'AI 查詢失敗，請稍後再試'}, ensure_ascii=False)}\n\n"
+            return
+
+        # 儲存對話紀錄
+        images_json = None
+        if request.images:
+            images_json = json.dumps(
+                [{"data": img.data, "media_type": img.media_type} for img in request.images],
+                ensure_ascii=False,
+            )
+        _save_chat_log(user.id, request.session_id, "user", request.query, images_json=images_json)
+        tool_calls_json = json.dumps(all_tool_calls, ensure_ascii=False) if all_tool_calls else None
+        _save_chat_log(user.id, request.session_id, "assistant", full_response, tool_calls_json=tool_calls_json)
 
     return StreamingResponse(
         event_generator(),

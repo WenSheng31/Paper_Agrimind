@@ -263,6 +263,28 @@ class ApiService {
       method: 'DELETE',
     })
   }
+
+  // ===== Chat Logs API (Admin) =====
+  async getChatSessions(page = 1, pageSize = 10, userId = null) {
+    const params = new URLSearchParams({ page, page_size: pageSize })
+    if (userId) params.append('user_id', userId)
+    return this.request(`/api/admin/chat-logs?${params}`)
+  }
+
+  async getChatSessionMessages(sessionId) {
+    return this.request(`/api/admin/chat-logs/${encodeURIComponent(sessionId)}`)
+  }
+
+  async deleteChatSession(sessionId) {
+    return this.request(`/api/admin/chat-logs/${encodeURIComponent(sessionId)}`, {
+      method: 'DELETE',
+    })
+  }
+
+  // ===== Admin Users API =====
+  async getUsers() {
+    return this.request('/api/admin/users')
+  }
 }
 
 // ===== AI API =====

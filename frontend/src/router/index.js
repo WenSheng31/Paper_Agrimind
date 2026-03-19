@@ -65,6 +65,12 @@ const router = createRouter({
           component: () => import('@/views/ChatLogDetail.vue'),
           meta: { requiresAdmin: true },
         },
+        {
+          path: 'user-management',
+          name: 'user-management',
+          component: () => import('@/views/UserManagement.vue'),
+          meta: { requiresAdmin: true },
+        },
       ],
     },
 

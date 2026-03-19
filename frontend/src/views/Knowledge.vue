@@ -27,7 +27,7 @@
     <!-- 文件列表 -->
     <div v-else>
       <div id="knowledge-table" class="overflow-x-auto rounded border border-slate-200 dark:border-slate-700">
-        <table class="w-full text-left text-sm">
+        <table class="w-full min-w-[600px] text-left text-sm">
           <thead class="bg-slate-50 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
             <tr>
               <th class="px-4 py-3 font-medium">標題</th>
@@ -40,15 +40,16 @@
           <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
             <template v-for="doc in documents" :key="doc.title">
             <tr class="bg-white dark:bg-slate-900">
-              <td class="px-4 py-3">
+              <td class="max-w-[200px] px-4 py-3">
                 <button
                   @click="toggleChunks(doc.title)"
-                  class="cursor-pointer font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+                  class="block w-full cursor-pointer truncate text-left font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+                  :title="doc.title"
                 >
                   {{ doc.title }}
                 </button>
               </td>
-              <td class="px-4 py-3 text-slate-600 dark:text-slate-400">{{ doc.source_filename ? doc.source_filename.replace(/\.[^.]+$/, '') : '-' }}</td>
+              <td class="max-w-[200px] truncate px-4 py-3 text-slate-600 dark:text-slate-400" :title="doc.source_filename">{{ doc.source_filename ? doc.source_filename.replace(/\.[^.]+$/, '') : '-' }}</td>
               <td class="px-4 py-3 text-slate-600 dark:text-slate-400">{{ doc.chunk_count }}</td>
               <td class="px-4 py-3 text-slate-600 dark:text-slate-400">{{ formatDate(doc.created_at) }}</td>
               <td v-if="isAdmin" class="px-4 py-3">

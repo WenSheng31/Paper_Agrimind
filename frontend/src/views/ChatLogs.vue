@@ -26,7 +26,7 @@
     <!-- 對話列表 -->
     <div v-else>
       <div class="overflow-x-auto rounded border border-slate-200 dark:border-slate-700">
-        <table class="w-full text-left text-sm">
+        <table class="w-full min-w-[700px] text-left text-sm">
           <thead class="bg-slate-50 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
             <tr>
               <th class="px-4 py-3 font-medium">使用者</th>
@@ -42,11 +42,12 @@
               :key="s.session_id"
               class="bg-white dark:bg-slate-900"
             >
-              <td class="px-4 py-3 text-slate-600 dark:text-slate-400">{{ s.username }}</td>
-              <td class="px-4 py-3">
+              <td class="max-w-[120px] truncate px-4 py-3 text-slate-600 dark:text-slate-400" :title="s.username">{{ s.username }}</td>
+              <td class="max-w-[250px] px-4 py-3">
                 <router-link
                   :to="`/chat-logs/${encodeURIComponent(s.session_id)}`"
-                  class="font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+                  class="block truncate font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+                  :title="s.first_query"
                 >
                   {{ s.first_query || '(空)' }}
                 </router-link>

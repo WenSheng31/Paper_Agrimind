@@ -285,6 +285,25 @@ class ApiService {
   async getUsers() {
     return this.request('/api/admin/users')
   }
+
+  async deleteUser(userId) {
+    return this.request(`/api/admin/users/${userId}`, { method: 'DELETE' })
+  }
+
+  async toggleUserActive(userId) {
+    return this.request(`/api/admin/users/${userId}/toggle-active`, { method: 'PUT' })
+  }
+
+  async toggleUserAdmin(userId) {
+    return this.request(`/api/admin/users/${userId}/toggle-admin`, { method: 'PUT' })
+  }
+
+  async resetUserPassword(userId, password) {
+    return this.request(`/api/admin/users/${userId}/reset-password`, {
+      method: 'PUT',
+      body: JSON.stringify({ password }),
+    })
+  }
 }
 
 // ===== AI API =====

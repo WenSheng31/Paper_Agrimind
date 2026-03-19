@@ -33,3 +33,7 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     user_id: Optional[int] = None
+
+
+class ResetPasswordRequest(BaseModel):
+    password: str

@@ -132,7 +132,7 @@
               @click="confirmResetPassword"
               :disabled="submitting || !newPassword"
               class="flex-1 cursor-pointer rounded bg-emerald-600 px-4 py-2 text-white transition
-                hover:bg-emerald-700 disabled:opacity-50"
+                hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {{ submitting ? '處理中...' : '確認重設' }}
             </button>
@@ -165,7 +165,7 @@
               @click="confirmDelete"
               :disabled="submitting"
               class="flex-1 cursor-pointer rounded bg-red-600 px-4 py-2 text-white transition
-                hover:bg-red-700 disabled:opacity-50"
+                hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {{ submitting ? '刪除中...' : '確認刪除' }}
             </button>

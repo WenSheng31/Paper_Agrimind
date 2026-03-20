@@ -14,6 +14,15 @@ from .auth import get_current_admin_user
 router = APIRouter(prefix="/api/admin/chat-logs", tags=["chat-logs"])
 
 
+def _safe_json(value):
+    if not value:
+        return None
+    try:
+        return json.loads(value)
+    except (json.JSONDecodeError, TypeError):
+        return None
+
+
 @router.get("/", response_model=PaginatedResponse[ChatSessionGroup])
 def list_chat_sessions(
     page: int = Query(1, ge=1),
@@ -101,8 +110,8 @@ def get_session_messages(
             session_id=log.session_id,
             role=log.role,
             content=log.content,
-            tool_calls=json.loads(log.tool_calls) if log.tool_calls else None,
-            images=json.loads(log.images) if log.images else None,
+            tool_calls=_safe_json(log.tool_calls),
+            images=_safe_json(log.images),
             created_at=log.created_at,
         )
         for log, username in logs

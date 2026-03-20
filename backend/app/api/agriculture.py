@@ -6,6 +6,7 @@ import math
 from ..core.database import get_db
 from sqlalchemy import func, and_, cast, Numeric
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 from ..schemas.agriculture import (
     FarmCreate, FarmUpdate, FarmResponse,
@@ -56,7 +57,7 @@ def get_chart_data(
     if latest_ts:
         since = latest_ts - timedelta(days=days)
     else:
-        since = datetime.now(timezone(timedelta(hours=8))) - timedelta(days=days)
+        since = datetime.now(ZoneInfo("Asia/Taipei")) - timedelta(days=days)
 
     date_fmt = 'YYYY-MM-DD' if days <= 30 else 'YYYY-MM'
     date_col = func.to_char(SensorData.timestamp, date_fmt).label("date")

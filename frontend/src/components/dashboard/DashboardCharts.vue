@@ -5,8 +5,8 @@
       <span class="text-slate-400 dark:text-slate-500">—</span>
       <select
         v-model="farmId"
-        class="cursor-pointer rounded border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700
-          dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+        class="cursor-pointer rounded border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700
+          dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300"
       >
         <option v-for="farm in farms" :key="farm.id" :value="farm.id">
           {{ farm.name }}

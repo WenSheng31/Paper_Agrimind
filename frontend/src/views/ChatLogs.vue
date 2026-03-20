@@ -6,8 +6,8 @@
       <select
         v-model="filterUserId"
         @change="onFilterChange"
-        class="rounded border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700
-          dark:border-slate-600 dark:bg-slate-950 dark:text-slate-300"
+        class="cursor-pointer rounded border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700
+          dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300"
       >
         <option :value="null">所有使用者</option>
         <option v-for="u in users" :key="u.id" :value="u.id">{{ u.username }}</option>
@@ -117,7 +117,7 @@
               @click="confirmDelete"
               :disabled="submitting"
               class="flex-1 cursor-pointer rounded bg-red-600 px-4 py-2 text-white transition
-                hover:bg-red-700 disabled:opacity-50"
+                hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {{ submitting ? '刪除中...' : '確認刪除' }}
             </button>

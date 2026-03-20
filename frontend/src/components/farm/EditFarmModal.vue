@@ -49,7 +49,7 @@
               type="submit"
               :disabled="submitting"
               class="flex-1 cursor-pointer rounded bg-emerald-600 px-4 py-2 text-white transition
-                hover:bg-emerald-700 disabled:opacity-50"
+                hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {{ submitting ? '儲存中...' : '儲存' }}
             </button>

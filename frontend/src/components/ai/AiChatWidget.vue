@@ -130,7 +130,7 @@
                       hover:bg-slate-100/50 dark:hover:bg-slate-800/50"
                   >
                     <div class="flex-1 truncate text-sm font-medium text-emerald-600 dark:text-emerald-400">
-                      {{ tool.name }}
+                      {{ getToolDisplayName(tool.name) }}
                     </div>
                   </button>
 
@@ -168,10 +168,8 @@
                 v-if="msg.content"
                 @click="copyMessage(msg)"
                 :class="[
-                  'mb-1 flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full transition',
-                  msg.role === 'user'
-                    ? 'mr-2 order-first bg-emerald-700 text-white hover:bg-emerald-800'
-                    : 'ml-2 bg-emerald-600 text-white hover:bg-emerald-700',
+                  'mb-1 flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full transition text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300',
+                  msg.role === 'user' ? 'mr-2 order-first' : 'ml-2',
                 ]"
                 :title="copiedMsgId === msg.id ? '已複製' : '複製'"
               >
@@ -185,7 +183,7 @@
             <div v-if="loading" class="flex justify-start px-4 py-2">
               <div v-if="streamingToolName" class="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
                 <span class="h-2 w-2 animate-ping rounded-full bg-emerald-500"></span>
-                正在呼叫工具: {{ streamingToolName }}
+                正在呼叫: {{ getToolDisplayName(streamingToolName) }}
               </div>
               <div v-else class="flex gap-1.5">
                 <span class="h-2 w-2 animate-bounce rounded-full bg-slate-400 dark:bg-slate-600"></span>
@@ -394,6 +392,19 @@ const removeImage = (idx) => {
 // 每次頁面刷新生成新的 session ID
 const sessionId = `session-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
 let messageId = 0
+
+const toolDisplayNames = {
+  get_current_time: '取得目前時間',
+  get_database_schema: '查詢資料庫結構',
+  query_database: '查詢農場資料庫',
+  get_farms_overview: '查詢農場總覽',
+  search_knowledge: '搜尋知識庫',
+  get_weather: '查詢中央氣象署即時觀測',
+  get_weather_forecast: '查詢中央氣象署天氣預報',
+  get_crop_price: '查詢農業部農產品行情',
+}
+
+const getToolDisplayName = (name) => toolDisplayNames[name] || name
 
 const toggleToolDetails = (msgId, toolIndex) => {
   const key = `${msgId}-${toolIndex}`

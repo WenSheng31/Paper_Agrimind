@@ -41,9 +41,12 @@ app.include_router(chat_logs.router)
 
 @app.get("/uploads/{file_path:path}")
 def serve_upload(file_path: str):
-    full_path = os.path.join(settings.UPLOAD_DIR, file_path)
+    from fastapi import HTTPException
+    upload_dir = os.path.realpath(settings.UPLOAD_DIR)
+    full_path = os.path.realpath(os.path.join(upload_dir, file_path))
+    if not full_path.startswith(upload_dir):
+        raise HTTPException(status_code=403, detail="Access denied")
     if not os.path.isfile(full_path):
-        from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="File not found")
     return FileResponse(full_path)
 

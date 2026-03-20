@@ -15,8 +15,8 @@
             <select
               v-model="farmId"
               required
-              class="w-full rounded border border-slate-300 bg-white px-3 py-2 text-slate-700
-                dark:border-slate-600 dark:bg-slate-950 dark:text-white"
+              class="w-full cursor-pointer rounded border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700
+                dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300"
             >
               <option value="" disabled>請選擇農場</option>
               <option v-for="farm in farms" :key="farm.id" :value="farm.id">{{ farm.name }}</option>

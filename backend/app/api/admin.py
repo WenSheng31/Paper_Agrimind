@@ -43,6 +43,14 @@ def delete_user(
             detail="找不到該用戶"
         )
 
+    if user.is_admin:
+        admin_count = db.query(User).filter(User.is_admin == True).count()
+        if admin_count <= 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="無法刪除最後一位管理員"
+            )
+
     db.delete(user)
     db.commit()
     return None
@@ -94,6 +102,14 @@ def toggle_user_admin(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="找不到該用戶"
         )
+
+    if user.is_admin:
+        admin_count = db.query(User).filter(User.is_admin == True).count()
+        if admin_count <= 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="無法降級最後一位管理員"
+            )
 
     user.is_admin = not user.is_admin
     db.commit()

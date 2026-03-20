@@ -103,7 +103,7 @@
               type="submit"
               :disabled="submitting"
               class="flex-1 cursor-pointer rounded bg-emerald-600 px-4 py-2 text-white transition
-                hover:bg-emerald-700 disabled:opacity-50"
+                hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {{ submitting ? '新增中...' : '新增' }}
             </button>
@@ -136,6 +136,8 @@ const formData = ref({
 })
 
 function handleSubmit() {
+  const hasValue = Object.values(formData.value).some(v => v !== null && v !== '')
+  if (!hasValue) return
   emit('submit', formData.value)
   formData.value = {
     temperature: null,

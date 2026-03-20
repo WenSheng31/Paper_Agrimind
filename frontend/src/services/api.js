@@ -28,11 +28,13 @@ class ApiService {
       if (!response.ok) {
         if (response.status === 401) {
           localStorage.removeItem('token')
+          window.location.href = '/login'
+          throw { status: 401, message: '登入已過期，請重新登入' }
         }
 
         throw {
           status: response.status,
-          message: data?.detail || (response.status === 401 ? '登入已過期，請重新登入' : '請求失敗'),
+          message: data?.detail || '請求失敗',
           data,
         }
       }
@@ -354,6 +356,8 @@ class AiService {
     if (images.length > 0) {
       body.images = images
     }
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 120000)
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -361,16 +365,19 @@ class AiService {
         ...this.api.getAuthHeader(),
       },
       body: JSON.stringify(body),
+      signal: controller.signal,
     })
 
     if (!response.ok) {
       if (response.status === 401) {
         localStorage.removeItem('token')
+        window.location.href = '/login'
+        throw { status: 401, message: '登入已過期，請重新登入' }
       }
       const data = await response.json().catch(() => null)
       throw {
         status: response.status,
-        message: response.status === 401 ? '登入已過期，請重新登入' : (data?.detail || '請求失敗'),
+        message: data?.detail || '請求失敗',
       }
     }
 
@@ -402,6 +409,7 @@ class AiService {
         }
       }
     }
+    clearTimeout(timeout)
   }
 
   async getTools() {

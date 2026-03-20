@@ -596,7 +596,7 @@ def get_weather_forecast(location: str) -> Dict[str, Any]:
     }
 
     try:
-        response = requests.get(url, params=params, timeout=15)
+        response = requests.get(url, params=params, timeout=10)
         response.raise_for_status()
         data = response.json()
 
@@ -735,7 +735,7 @@ def get_crop_price(
             if end_date:
                 fuzzy_params["EndDate"] = end_date
 
-            resp = requests.get(url, params=fuzzy_params, timeout=15)
+            resp = requests.get(url, params=fuzzy_params, timeout=10)
             resp.raise_for_status()
             all_data = resp.json()
 

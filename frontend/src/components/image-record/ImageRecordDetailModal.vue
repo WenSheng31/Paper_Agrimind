@@ -142,7 +142,7 @@
                     @click="saveDescription"
                     :disabled="saving"
                     class="cursor-pointer rounded bg-emerald-600 px-3 py-1 text-sm text-white
-                      hover:bg-emerald-700 disabled:opacity-50"
+                      hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {{ saving ? '儲存中...' : '儲存' }}
                   </button>
@@ -210,7 +210,7 @@
                   @click="confirmDelete"
                   :disabled="deleting"
                   class="flex-1 cursor-pointer rounded bg-red-600 px-4 py-2 text-white transition
-                    hover:bg-red-700 disabled:opacity-50"
+                    hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {{ deleting ? '刪除中...' : '確認刪除' }}
                 </button>

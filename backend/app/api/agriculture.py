@@ -1,24 +1,31 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
+from sqlalchemy import func, cast, Numeric
 from typing import List
+from datetime import datetime, timedelta
 import math
 
 from ..core.database import get_db
-from sqlalchemy import func, and_, cast, Numeric
-from datetime import datetime, timedelta, timezone
-from zoneinfo import ZoneInfo
 
 from ..schemas.agriculture import (
     FarmCreate, FarmUpdate, FarmResponse,
     SensorDataCreate, SensorDataResponse,
     OperationCreate, OperationUpdate, OperationResponse,
     PaginatedResponse, DashboardStats,
-    ChartDataResponse, TimeSeriesItem, FarmLatest,
+    OverviewResponse, FarmChartResponse, TimeSeriesItem, FarmLatest,
 )
 from ..models.agriculture import Farm, SensorData, Operation
 from .auth import get_current_user, get_current_admin_user
 
 router = APIRouter(prefix="/api/agriculture", tags=["agriculture"])
+
+
+def _avg(col):
+    return func.round(cast(func.avg(col), Numeric), 1)
+
+
+def _sum(col):
+    return func.round(cast(func.sum(col), Numeric), 1)
 
 
 def get_or_404(db: Session, model, obj_id: int):
@@ -40,33 +47,21 @@ def get_dashboard_stats(db: Session = Depends(get_db), _user=Depends(get_current
     )
 
 
-@router.get("/dashboard/chart-data", response_model=ChartDataResponse)
-def get_chart_data(
-    farm_id: int = Query(...),
+@router.get("/dashboard/overview", response_model=OverviewResponse)
+def get_dashboard_overview(
     days: int = Query(30, ge=1, le=365),
     db: Session = Depends(get_db),
     _user=Depends(get_current_user),
 ):
-    """取得單一農場的圖表資料，以資料庫最新數據往前推 days 天"""
-    farm = get_or_404(db, Farm, farm_id)
-
-    latest_ts = db.query(func.max(SensorData.timestamp)).filter(
-        SensorData.farm_id == farm_id
-    ).scalar()
-
+    """取得所有農場的圖表資料：近 N 天時序 + 各農場最新 NPK"""
+    latest_ts = db.query(func.max(SensorData.timestamp)).scalar()
     if latest_ts:
         since = latest_ts - timedelta(days=days)
     else:
-        since = datetime.now(ZoneInfo("Asia/Taipei")) - timedelta(days=days)
+        return OverviewResponse(time_series=[], latest_per_farm=[])
 
     date_fmt = 'YYYY-MM-DD' if days <= 30 else 'YYYY-MM'
     date_col = func.to_char(SensorData.timestamp, date_fmt).label("date")
-
-    def _avg(col):
-        return func.round(cast(func.avg(col), Numeric), 1)
-
-    def _sum(col):
-        return func.round(cast(func.sum(col), Numeric), 1)
 
     time_series = (
         db.query(
@@ -76,40 +71,44 @@ def get_chart_data(
             _avg(SensorData.temperature).label("avg_temperature"),
             _avg(SensorData.humidity).label("avg_humidity"),
             _sum(SensorData.precipitation).label("total_precipitation"),
-            _avg(SensorData.sunshine_hours).label("avg_sunshine_hours"),
-            _avg(SensorData.soil_moisture).label("avg_soil_moisture"),
             _avg(SensorData.soil_n).label("avg_soil_n"),
             _avg(SensorData.soil_p).label("avg_soil_p"),
             _avg(SensorData.soil_k).label("avg_soil_k"),
         )
         .join(Farm, SensorData.farm_id == Farm.id)
-        .filter(SensorData.farm_id == farm_id, SensorData.timestamp >= since)
+        .filter(SensorData.timestamp >= since)
         .group_by(date_col, SensorData.farm_id, Farm.name)
         .order_by(date_col)
         .all()
     )
 
-    # 該農場最新一筆
-    latest = (
-        db.query(SensorData)
-        .filter(SensorData.farm_id == farm_id)
-        .order_by(SensorData.timestamp.desc())
-        .first()
+    # 各農場最新一筆 NPK
+    subq = (
+        db.query(
+            SensorData.farm_id,
+            func.max(SensorData.id).label("max_id"),
+        )
+        .group_by(SensorData.farm_id)
+        .subquery()
     )
-    latest_per_farm = []
-    if latest:
-        latest_per_farm.append(FarmLatest(
-            farm_id=farm.id,
-            farm_name=farm.name,
-            temperature=latest.temperature,
-            humidity=latest.humidity,
-            soil_moisture=latest.soil_moisture,
-            soil_n=latest.soil_n,
-            soil_p=latest.soil_p,
-            soil_k=latest.soil_k,
-        ))
+    latest_rows = (
+        db.query(SensorData, Farm.name.label("farm_name"))
+        .join(subq, SensorData.id == subq.c.max_id)
+        .join(Farm, SensorData.farm_id == Farm.id)
+        .all()
+    )
+    latest_per_farm = [
+        FarmLatest(
+            farm_id=row.SensorData.farm_id,
+            farm_name=row.farm_name,
+            soil_n=row.SensorData.soil_n,
+            soil_p=row.SensorData.soil_p,
+            soil_k=row.SensorData.soil_k,
+        )
+        for row in latest_rows
+    ]
 
-    return ChartDataResponse(
+    return OverviewResponse(
         time_series=[TimeSeriesItem(**dict(r._mapping)) for r in time_series],
         latest_per_farm=latest_per_farm,
     )
@@ -134,6 +133,68 @@ def get_farms(db: Session = Depends(get_db), _user=Depends(get_current_user)):
 @router.get("/farms/{farm_id}", response_model=FarmResponse)
 def get_farm(farm_id: int, db: Session = Depends(get_db), _user=Depends(get_current_user)):
     return get_or_404(db, Farm, farm_id)
+
+
+@router.get("/farms/{farm_id}/chart-data", response_model=FarmChartResponse)
+def get_farm_chart_data(
+    farm_id: int,
+    days: int = Query(30, ge=1, le=365),
+    db: Session = Depends(get_db),
+    _user=Depends(get_current_user),
+):
+    """取得單一農場的圖表資料：近 N 天時序 + 最新 NPK"""
+    farm = get_or_404(db, Farm, farm_id)
+
+    latest_ts = db.query(func.max(SensorData.timestamp)).filter(
+        SensorData.farm_id == farm_id
+    ).scalar()
+
+    if not latest_ts:
+        return FarmChartResponse(time_series=[], latest=None)
+
+    since = latest_ts - timedelta(days=days)
+    date_fmt = 'YYYY-MM-DD' if days <= 30 else 'YYYY-MM'
+    date_col = func.to_char(SensorData.timestamp, date_fmt).label("date")
+
+    time_series = (
+        db.query(
+            date_col,
+            SensorData.farm_id,
+            Farm.name.label("farm_name"),
+            _avg(SensorData.temperature).label("avg_temperature"),
+            _avg(SensorData.humidity).label("avg_humidity"),
+            _sum(SensorData.precipitation).label("total_precipitation"),
+            _avg(SensorData.soil_n).label("avg_soil_n"),
+            _avg(SensorData.soil_p).label("avg_soil_p"),
+            _avg(SensorData.soil_k).label("avg_soil_k"),
+        )
+        .join(Farm, SensorData.farm_id == Farm.id)
+        .filter(SensorData.farm_id == farm_id, SensorData.timestamp >= since)
+        .group_by(date_col, SensorData.farm_id, Farm.name)
+        .order_by(date_col)
+        .all()
+    )
+
+    latest = (
+        db.query(SensorData)
+        .filter(SensorData.farm_id == farm_id)
+        .order_by(SensorData.timestamp.desc())
+        .first()
+    )
+    latest_data = None
+    if latest:
+        latest_data = FarmLatest(
+            farm_id=farm.id,
+            farm_name=farm.name,
+            soil_n=latest.soil_n,
+            soil_p=latest.soil_p,
+            soil_k=latest.soil_k,
+        )
+
+    return FarmChartResponse(
+        time_series=[TimeSeriesItem(**dict(r._mapping)) for r in time_series],
+        latest=latest_data,
+    )
 
 
 @router.put("/farms/{farm_id}", response_model=FarmResponse)

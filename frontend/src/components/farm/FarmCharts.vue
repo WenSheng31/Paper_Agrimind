@@ -1,8 +1,5 @@
 <template>
-  <div>
-    <h2 class="mb-3 text-lg font-semibold text-slate-800 dark:text-white">農場數據總覽</h2>
-
-    <!-- 趨勢（近 30 天） -->
+  <div class="p-6">
     <div class="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
       <ChartCard
         title="溫度 / 濕度趨勢（近 30 天）"
@@ -18,9 +15,8 @@
       </ChartCard>
     </div>
 
-    <!-- 最新狀態 -->
     <div class="grid grid-cols-1 gap-4">
-      <ChartCard title="各農場土壤養分 (NPK)" :loading="loading" :empty="!latestList.length">
+      <ChartCard title="土壤養分 (NPK)" :loading="loading" :empty="!latestList.length">
         <SoilNutrientChart :latest-per-farm="latestList" />
       </ChartCard>
     </div>
@@ -28,19 +24,23 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
 import { useToast } from '@/composables/useToast'
 import api from '@/services/api'
-import ChartCard from './ChartCard.vue'
-import TemperatureHumidityChart from './TemperatureHumidityChart.vue'
-import PrecipitationChart from './PrecipitationChart.vue'
-import SoilNutrientChart from './SoilNutrientChart.vue'
+import ChartCard from '@/components/dashboard/ChartCard.vue'
+import TemperatureHumidityChart from '@/components/dashboard/TemperatureHumidityChart.vue'
+import PrecipitationChart from '@/components/dashboard/PrecipitationChart.vue'
+import SoilNutrientChart from '@/components/dashboard/SoilNutrientChart.vue'
+
+const props = defineProps({
+  farmId: { type: Number, required: true },
+})
 
 const { showToast } = useToast()
 
 const loading = ref(false)
 const timeSeries = ref([])
-const latestList = ref([])
+const latest = ref(null)
 
 const farmNames = computed(() => {
   const map = {}
@@ -50,20 +50,25 @@ const farmNames = computed(() => {
   return map
 })
 
+const latestList = computed(() => {
+  return latest.value ? [latest.value] : []
+})
+
 async function loadData() {
   loading.value = true
   try {
-    const data = await api.getDashboardOverview(30)
+    const data = await api.getFarmChartData(props.farmId, 30)
     timeSeries.value = data.time_series
-    latestList.value = data.latest_per_farm
+    latest.value = data.latest
   } catch (error) {
     timeSeries.value = []
-    latestList.value = []
-    showToast(error.message || '載入農場數據失敗', 'error')
+    latest.value = null
+    showToast(error.message || '載入圖表數據失敗', 'error')
   } finally {
     loading.value = false
   }
 }
 
+watch(() => props.farmId, loadData)
 onMounted(loadData)
 </script>

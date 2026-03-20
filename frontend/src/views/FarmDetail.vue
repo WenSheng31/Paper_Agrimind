@@ -64,6 +64,19 @@
         <div class="border-b border-slate-200 dark:border-slate-700">
           <div class="flex">
             <button
+              @click="activeTab = 'charts'"
+              :class="[
+                'cursor-pointer px-6 py-3 font-medium transition',
+                activeTab === 'charts'
+                  ? `border-b-2 border-emerald-600 text-emerald-600 dark:border-emerald-400
+                    dark:text-emerald-400`
+                  : `text-slate-600 hover:text-slate-800 dark:text-slate-400
+                    dark:hover:text-slate-200`,
+              ]"
+            >
+              數據圖表
+            </button>
+            <button
               @click="activeTab = 'sensor'"
               :class="[
                 'cursor-pointer px-6 py-3 font-medium transition',
@@ -105,12 +118,15 @@
           </div>
         </div>
 
-        <!-- 感測器數據/農務記錄 -->
+        <!-- Tab 內容 -->
         <div class="min-h-100">
           <KeepAlive>
-            <FarmSensorTab v-if="activeTab === 'sensor'" :farm-id="farm.id" />
-            <FarmOperationsTab v-else-if="activeTab === 'operations'" :farm-id="farm.id" />
-            <FarmImageRecordsTab v-else-if="activeTab === 'images'" :farm-id="farm.id" :farm-name="farm.name" />
+            <component
+              :is="tabComponents[activeTab]"
+              :key="activeTab"
+              :farm-id="farm.id"
+              :farm-name="farm.name"
+            />
           </KeepAlive>
         </div>
       </div>
@@ -133,29 +149,34 @@ import { useRoute } from 'vue-router'
 import { useToast } from '@/composables/useToast'
 import { useAuthStore } from '@/stores/auth'
 import { storeToRefs } from 'pinia'
-import api from '@/services/api'
-
-const authStore = useAuthStore()
-const { isAdmin } = storeToRefs(authStore)
 import { ChevronLeft } from 'lucide-vue-next'
-
-// Sub-components
+import api from '@/services/api'
 import EditFarmModal from '@/components/farm/EditFarmModal.vue'
+import FarmCharts from '@/components/farm/FarmCharts.vue'
 import FarmSensorTab from '@/components/farm/FarmSensorTab.vue'
 import FarmOperationsTab from '@/components/farm/FarmOperationsTab.vue'
 import FarmImageRecordsTab from '@/components/farm/FarmImageRecordsTab.vue'
 import AiSummary from '@/components/ai/AiSummary.vue'
 import { useOnboardingTour } from '@/composables/useOnboardingTour'
 
+const tabComponents = {
+  charts: FarmCharts,
+  sensor: FarmSensorTab,
+  operations: FarmOperationsTab,
+  images: FarmImageRecordsTab,
+}
+
 const route = useRoute()
 const { showToast } = useToast()
+const authStore = useAuthStore()
+const { isAdmin } = storeToRefs(authStore)
 
 const { startTour } = useOnboardingTour('farmDetail')
 
 const loading = ref(true)
 const submitting = ref(false)
 const farm = ref(null)
-const activeTab = ref('sensor')
+const activeTab = ref('charts')
 const showEditModal = ref(false)
 
 // 格式化日期字串

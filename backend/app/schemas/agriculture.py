@@ -14,8 +14,6 @@ class TimeSeriesItem(BaseModel):
     avg_temperature: Optional[float] = None
     avg_humidity: Optional[float] = None
     total_precipitation: Optional[float] = None
-    avg_sunshine_hours: Optional[float] = None
-    avg_soil_moisture: Optional[float] = None
     avg_soil_n: Optional[float] = None
     avg_soil_p: Optional[float] = None
     avg_soil_k: Optional[float] = None
@@ -23,16 +21,17 @@ class TimeSeriesItem(BaseModel):
 class FarmLatest(BaseModel):
     farm_id: int
     farm_name: str
-    temperature: Optional[float] = None
-    humidity: Optional[float] = None
-    soil_moisture: Optional[float] = None
     soil_n: Optional[float] = None
     soil_p: Optional[float] = None
     soil_k: Optional[float] = None
 
-class ChartDataResponse(BaseModel):
+class OverviewResponse(BaseModel):
     time_series: List[TimeSeriesItem]
     latest_per_farm: List[FarmLatest]
+
+class FarmChartResponse(BaseModel):
+    time_series: List[TimeSeriesItem]
+    latest: Optional[FarmLatest] = None
 
 # --- 分頁響應 ---
 T = TypeVar('T')

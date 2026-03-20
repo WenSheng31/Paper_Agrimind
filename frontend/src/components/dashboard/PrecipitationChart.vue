@@ -28,7 +28,7 @@ function formatDateLabel(d) {
   return d.slice(5) // YYYY-MM-DD → MM-DD
 }
 
-const BAR_COLORS = ['#06b6d4', '#3b82f6', '#8b5cf6']
+const BAR_COLORS = ['#06b6d4', '#3b82f6', '#8b5cf6', '#f97316', '#10b981', '#ec4899']
 
 const chartData = computed(() => {
   const dates = [...new Set(props.timeSeries.map((d) => d.date))].sort()

@@ -3,7 +3,7 @@
 </template>
 
 <script setup>
-import { computed, toRefs } from 'vue'
+import { computed } from 'vue'
 import { Line } from 'vue-chartjs'
 import {
   Chart as ChartJS,
@@ -30,8 +30,8 @@ function formatDateLabel(d) {
   return d.slice(5) // YYYY-MM-DD → MM-DD
 }
 
-const TEMP_COLORS = ['#f97316', '#ef4444', '#eab308']
-const HUMIDITY_COLORS = ['#3b82f6', '#8b5cf6', '#06b6d4']
+const TEMP_COLORS = ['#f97316', '#ef4444', '#eab308', '#ec4899', '#14b8a6', '#84cc16']
+const HUMIDITY_COLORS = ['#3b82f6', '#8b5cf6', '#06b6d4', '#6366f1', '#0ea5e9', '#a855f7']
 
 const chartData = computed(() => {
   const dates = [...new Set(props.timeSeries.map((d) => d.date))].sort()

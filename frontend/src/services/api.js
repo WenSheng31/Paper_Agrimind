@@ -73,10 +73,8 @@ class ApiService {
     return this.request('/api/agriculture/dashboard/stats')
   }
 
-  async getChartData(farmId = null, days = 7) {
-    const params = new URLSearchParams({ days })
-    if (farmId) params.append('farm_id', farmId)
-    return this.request(`/api/agriculture/dashboard/chart-data?${params}`)
+  async getDashboardOverview(days = 30) {
+    return this.request(`/api/agriculture/dashboard/overview?days=${days}`)
   }
 
   // ===== Farm API =====
@@ -86,6 +84,10 @@ class ApiService {
 
   async getFarm(farmId) {
     return this.request(`/api/agriculture/farms/${farmId}`)
+  }
+
+  async getFarmChartData(farmId, days = 30) {
+    return this.request(`/api/agriculture/farms/${farmId}/chart-data?days=${days}`)
   }
 
   async createFarm(farmData) {

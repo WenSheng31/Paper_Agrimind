@@ -14,7 +14,7 @@
       cache-key="home-summary"
     />
 
-    <DashboardCharts v-if="farms.length" id="dashboard-charts" :farms="farms" />
+    <DashboardCharts class="mb-4" />
   </div>
 </template>
 
@@ -24,8 +24,8 @@ import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import api from '@/services/api'
 import FarmQuickNav from '@/components/dashboard/FarmQuickNav.vue'
-import AiSummary from '@/components/ai/AiSummary.vue'
 import DashboardCharts from '@/components/dashboard/DashboardCharts.vue'
+import AiSummary from '@/components/ai/AiSummary.vue'
 import { useOnboardingTour } from '@/composables/useOnboardingTour'
 
 const authStore = useAuthStore()
@@ -34,17 +34,16 @@ const { startTour } = useOnboardingTour('home')
 
 const farms = ref([])
 
-async function loadDashboardData() {
+async function loadFarms() {
   try {
-    const farmsData = await api.getFarms()
-    farms.value = farmsData
+    farms.value = await api.getFarms()
   } catch (error) {
-    showToast(error.message || '載入儀表板數據失敗', 'error')
+    showToast(error.message || '載入農場資料失敗', 'error')
   }
 }
 
 onMounted(async () => {
-  await loadDashboardData()
+  await loadFarms()
   setTimeout(() => startTour(), 500)
 })
 </script>

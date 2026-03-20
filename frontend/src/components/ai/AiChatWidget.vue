@@ -220,7 +220,7 @@
             <input
               ref="fileInput"
               type="file"
-              accept="image/jpeg,image/png,image/gif,image/webp"
+              accept="image/*"
               multiple
               class="hidden"
               @change="handleFileSelect"
@@ -360,29 +360,57 @@ const sendSuggestion = (question) => {
   sendMessage()
 }
 
-// 圖片處理
-const handleFileSelect = (event) => {
+// 圖片處理：統一轉為 JPEG（Safari 支援 HEIC，Chrome/Firefox 僅支援常見格式）
+const MAX_IMAGE_SIZE = 1920
+
+function convertToJpeg(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file)
+    const img = new Image()
+    img.onload = () => {
+      let { width, height } = img
+      if (width > MAX_IMAGE_SIZE || height > MAX_IMAGE_SIZE) {
+        const scale = MAX_IMAGE_SIZE / Math.max(width, height)
+        width = Math.round(width * scale)
+        height = Math.round(height * scale)
+      }
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      const ctx = canvas.getContext('2d')
+      ctx.drawImage(img, 0, 0, width, height)
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.85)
+      URL.revokeObjectURL(url)
+      resolve({ dataUrl, base64: dataUrl.split(',')[1] })
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(url)
+      reject(new Error('無法讀取此圖片'))
+    }
+    img.src = url
+  })
+}
+
+const handleFileSelect = async (event) => {
   const files = Array.from(event.target.files)
+  event.target.value = ''
   for (const file of files) {
     if (!file.type.startsWith('image/')) continue
-    if (file.size > 5 * 1024 * 1024) {
-      showToast('圖片大小不能超過 5MB', 'error')
+    if (file.size > 20 * 1024 * 1024) {
+      showToast('圖片大小不能超過 20MB', 'error')
       continue
     }
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const dataUrl = e.target.result
-      const base64 = dataUrl.split(',')[1]
+    try {
+      const { dataUrl, base64 } = await convertToJpeg(file)
       pendingImages.value.push({
         preview: dataUrl,
         data: base64,
-        media_type: file.type,
+        media_type: 'image/jpeg',
       })
+    } catch {
+      showToast('不支援此圖片格式', 'error')
     }
-    reader.readAsDataURL(file)
   }
-  // 清空 input 讓同一檔案可以再次選取
-  event.target.value = ''
 }
 
 const removeImage = (idx) => {

@@ -9,6 +9,10 @@ class UserCreate(BaseModel):
     password: str
 
 
+class AdminCreateUser(UserCreate):
+    is_admin: bool = False
+
+
 class UserLogin(BaseModel):
     email: EmailStr
     password: str

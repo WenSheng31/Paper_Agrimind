@@ -22,6 +22,11 @@ html.dark body {
   background-color: #020617; /* slate-950 */
 }
 
+/* Modal 開啟時鎖定背景滾動 */
+body:has(.modal-backdrop) {
+  overflow: hidden;
+}
+
 /* 隱藏滾動條 */
 * {
   scrollbar-width: none; /* Firefox */

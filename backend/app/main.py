@@ -6,15 +6,16 @@ from fastapi.responses import FileResponse
 from .core.config import settings
 from .core.init_db import init_db
 from .api import auth, admin, agriculture, ai, knowledge, image_records, chat_logs
+from .services.ai import mcp_client
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
     # 啟動時連接 MCP 服務器
-    await ai.mcp_client.connect()
+    await mcp_client.connect()
     yield
     # 關閉時清理 MCP 資源
-    await ai.mcp_client.cleanup()
+    await mcp_client.cleanup()
 
 app = FastAPI(title="Argi API", version="1.0.0", lifespan=lifespan)
 

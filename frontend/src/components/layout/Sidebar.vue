@@ -135,8 +135,8 @@
           <div class="truncate text-base font-medium text-slate-900 dark:text-white">
             {{ user?.username || '訪客' }}
           </div>
-          <div v-if="isAdmin" class="text-base text-emerald-600 dark:text-emerald-400">管理員</div>
-          <div v-else class="text-base text-slate-500 dark:text-slate-400">{{ user?.email }}</div>
+          <div v-if="isAdmin" class="text-sm text-emerald-600 dark:text-emerald-400">管理員</div>
+          <div v-else class="text-sm text-slate-500 dark:text-slate-400">{{ user?.email }}</div>
         </div>
       </div>
       <button

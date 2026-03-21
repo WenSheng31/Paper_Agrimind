@@ -3,13 +3,24 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from ..core.database import get_db
-from ..schemas.user import UserResponse, ResetPasswordRequest
-from ..core.security import get_password_hash
+from ..schemas.user import UserResponse, ResetPasswordRequest, AdminCreateUser
 from ..services.user import user_service
-from ..models.user import User
 from .auth import get_current_admin_user
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
+
+
+@router.post("/users", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+def admin_create_user(
+    body: AdminCreateUser,
+    db: Session = Depends(get_db),
+    _current_admin=Depends(get_current_admin_user)
+):
+    """管理員新增帳號"""
+    try:
+        return user_service.admin_create_user(db, body)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.get("/users", response_model=List[UserResponse])
@@ -18,8 +29,7 @@ def get_all_users(
     _current_admin=Depends(get_current_admin_user)
 ):
     """獲取所有用戶列表 (僅管理員)"""
-    users = db.query(User).all()
-    return users
+    return user_service.get_all_users(db)
 
 
 @router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -29,30 +39,10 @@ def delete_user(
     current_admin=Depends(get_current_admin_user)
 ):
     """刪除用戶 (僅管理員)"""
-    # 不能刪除自己
-    if user_id == current_admin.id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="不能刪除自己的帳號"
-        )
-
-    user = user_service.get_user_by_id(db, user_id)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="找不到該用戶"
-        )
-
-    if user.is_admin:
-        admin_count = db.query(User).filter(User.is_admin == True).count()
-        if admin_count <= 1:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="無法刪除最後一位管理員"
-            )
-
-    db.delete(user)
-    db.commit()
+    try:
+        user_service.delete_user(db, user_id, current_admin.id)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     return None
 
 
@@ -63,24 +53,10 @@ def toggle_user_active(
     current_admin=Depends(get_current_admin_user)
 ):
     """停用/啟用用戶 (僅管理員)"""
-    # 不能停用自己
-    if user_id == current_admin.id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="不能停用自己的帳號"
-        )
-
-    user = user_service.get_user_by_id(db, user_id)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="找不到該用戶"
-        )
-
-    user.is_active = not user.is_active
-    db.commit()
-    db.refresh(user)
-    return user
+    try:
+        return user_service.toggle_active(db, user_id, current_admin.id)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.put("/users/{user_id}/toggle-admin", response_model=UserResponse)
@@ -90,31 +66,10 @@ def toggle_user_admin(
     current_admin=Depends(get_current_admin_user)
 ):
     """切換用戶管理員權限 (僅管理員)"""
-    if user_id == current_admin.id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="不能變更自己的管理員權限"
-        )
-
-    user = user_service.get_user_by_id(db, user_id)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="找不到該用戶"
-        )
-
-    if user.is_admin:
-        admin_count = db.query(User).filter(User.is_admin == True).count()
-        if admin_count <= 1:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="無法降級最後一位管理員"
-            )
-
-    user.is_admin = not user.is_admin
-    db.commit()
-    db.refresh(user)
-    return user
+    try:
+        return user_service.toggle_admin(db, user_id, current_admin.id)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.put("/users/{user_id}/reset-password", response_model=UserResponse)
@@ -125,20 +80,7 @@ def reset_user_password(
     current_admin=Depends(get_current_admin_user)
 ):
     """重設用戶密碼 (僅管理員)"""
-    if user_id == current_admin.id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="不能透過此功能重設自己的密碼"
-        )
-
-    user = user_service.get_user_by_id(db, user_id)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="找不到該用戶"
-        )
-
-    user.hashed_password = get_password_hash(body.password)
-    db.commit()
-    db.refresh(user)
-    return user
+    try:
+        return user_service.reset_password(db, user_id, body.password, current_admin.id)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

@@ -308,6 +308,13 @@ class ApiService {
       body: JSON.stringify({ password }),
     })
   }
+
+  async createUser(userData) {
+    return this.request('/api/admin/users', {
+      method: 'POST',
+      body: JSON.stringify(userData),
+    })
+  }
 }
 
 // ===== AI API =====

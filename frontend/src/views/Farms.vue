@@ -55,11 +55,11 @@
         <p class="mb-2 text-slate-600 dark:text-slate-400">
           <span class="font-medium">位置：</span>{{ farm.location || '未設定' }}
         </p>
-        <p v-if="farm.description" class="line-clamp-2 text-sm text-slate-600 dark:text-slate-400">
+        <p v-if="farm.description" class="line-clamp-2 text-base text-slate-600 dark:text-slate-400">
           {{ farm.description }}
         </p>
         <div class="mt-4 border-t border-slate-200 pt-4 dark:border-slate-700">
-          <p class="text-sm text-slate-500 dark:text-slate-500">建立時間：{{ formatDate(farm.created_at) }}</p>
+          <p class="text-base text-slate-500 dark:text-slate-500">建立時間：{{ formatDate(farm.created_at) }}</p>
         </div>
       </div>
     </div>
@@ -75,7 +75,7 @@
           <h2 class="mb-4 text-2xl font-bold text-slate-800 dark:text-white">新增農場</h2>
           <form @submit.prevent="createFarm" class="space-y-4">
             <div>
-              <label class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">農場名稱</label>
+              <label class="mb-1 block text-base font-medium text-slate-700 dark:text-slate-300">農場名稱</label>
               <input
                 v-model="formData.name"
                 type="text"
@@ -85,7 +85,7 @@
               />
             </div>
             <div>
-              <label class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">位置</label>
+              <label class="mb-1 block text-base font-medium text-slate-700 dark:text-slate-300">位置</label>
               <input
                 v-model="formData.location"
                 type="text"
@@ -94,7 +94,7 @@
               />
             </div>
             <div>
-              <label class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">描述</label>
+              <label class="mb-1 block text-base font-medium text-slate-700 dark:text-slate-300">描述</label>
               <textarea
                 v-model="formData.description"
                 rows="3"

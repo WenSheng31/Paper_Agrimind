@@ -6,7 +6,7 @@
       <select
         v-model="filterUserId"
         @change="onFilterChange"
-        class="cursor-pointer rounded border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700
+        class="cursor-pointer rounded border border-slate-300 bg-white px-3 py-2 text-base text-slate-700
           dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300"
       >
         <option :value="null">所有使用者</option>
@@ -26,7 +26,7 @@
     <!-- 對話列表 -->
     <div v-else>
       <div class="overflow-x-auto rounded border border-slate-200 dark:border-slate-700">
-        <table class="w-full min-w-[700px] text-left text-sm">
+        <table class="w-full min-w-[700px] text-left text-base">
           <thead class="bg-slate-50 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
             <tr>
               <th class="px-4 py-3 font-medium">使用者</th>
@@ -72,19 +72,19 @@
         <button
           @click="goToPage(currentPage - 1)"
           :disabled="currentPage <= 1 || loading"
-          class="cursor-pointer rounded border border-slate-300 px-3 py-1 text-sm transition
+          class="cursor-pointer rounded border border-slate-300 px-3 py-1 text-base transition
             hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50
             dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
         >
           上一頁
         </button>
-        <span class="text-sm text-slate-600 dark:text-slate-400">
+        <span class="text-base text-slate-600 dark:text-slate-400">
           {{ currentPage }} / {{ totalPages }}
         </span>
         <button
           @click="goToPage(currentPage + 1)"
           :disabled="currentPage >= totalPages || loading"
-          class="cursor-pointer rounded border border-slate-300 px-3 py-1 text-sm transition
+          class="cursor-pointer rounded border border-slate-300 px-3 py-1 text-base transition
             hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50
             dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
         >

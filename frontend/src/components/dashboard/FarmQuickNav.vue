@@ -2,7 +2,7 @@
   <div>
     <h2 class="mb-3 text-lg font-semibold text-slate-800 dark:text-white">快速導航</h2>
 
-    <p v-if="!farms.length" class="text-sm text-slate-500 dark:text-slate-400">
+    <p v-if="!farms.length" class="text-base text-slate-500 dark:text-slate-400">
       尚無農場資料
     </p>
 
@@ -21,7 +21,7 @@
           </div>
           <div>
             <h3 class="font-bold text-slate-800 dark:text-white">{{ farm.name }}</h3>
-            <p class="text-xs text-slate-500 dark:text-slate-400">
+            <p class="text-base text-slate-500 dark:text-slate-400">
               {{ farm.location || '未設定位置' }}
             </p>
           </div>

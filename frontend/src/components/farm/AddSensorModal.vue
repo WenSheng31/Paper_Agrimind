@@ -10,7 +10,7 @@
         <form @submit.prevent="handleSubmit" class="space-y-4">
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">環境溫度 (°C)</label>
+              <label class="mb-1 block text-base font-medium text-slate-700 dark:text-slate-300">環境溫度 (°C)</label>
               <input
                 v-model.number="formData.temperature"
                 type="number"
@@ -20,7 +20,7 @@
               />
             </div>
             <div>
-              <label class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">環境濕度 (%)</label>
+              <label class="mb-1 block text-base font-medium text-slate-700 dark:text-slate-300">環境濕度 (%)</label>
               <input
                 v-model.number="formData.humidity"
                 type="number"
@@ -30,7 +30,7 @@
               />
             </div>
             <div>
-              <label class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">降水量 (mm)</label>
+              <label class="mb-1 block text-base font-medium text-slate-700 dark:text-slate-300">降水量 (mm)</label>
               <input
                 v-model.number="formData.precipitation"
                 type="number"
@@ -40,7 +40,7 @@
               />
             </div>
             <div>
-              <label class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">日照時數 (hr)</label>
+              <label class="mb-1 block text-base font-medium text-slate-700 dark:text-slate-300">日照時數 (hr)</label>
               <input
                 v-model.number="formData.sunshine_hours"
                 type="number"
@@ -50,7 +50,7 @@
               />
             </div>
             <div>
-              <label class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">土壤濕度 (%)</label>
+              <label class="mb-1 block text-base font-medium text-slate-700 dark:text-slate-300">土壤濕度 (%)</label>
               <input
                 v-model.number="formData.soil_moisture"
                 type="number"
@@ -60,7 +60,7 @@
               />
             </div>
             <div>
-              <label class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">土壤氮 (mg/kg)</label>
+              <label class="mb-1 block text-base font-medium text-slate-700 dark:text-slate-300">土壤氮 (mg/kg)</label>
               <input
                 v-model.number="formData.soil_n"
                 type="number"
@@ -70,7 +70,7 @@
               />
             </div>
             <div>
-              <label class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">土壤磷 (mg/kg)</label>
+              <label class="mb-1 block text-base font-medium text-slate-700 dark:text-slate-300">土壤磷 (mg/kg)</label>
               <input
                 v-model.number="formData.soil_p"
                 type="number"
@@ -80,7 +80,7 @@
               />
             </div>
             <div>
-              <label class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">土壤鉀 (mg/kg)</label>
+              <label class="mb-1 block text-base font-medium text-slate-700 dark:text-slate-300">土壤鉀 (mg/kg)</label>
               <input
                 v-model.number="formData.soil_k"
                 type="number"

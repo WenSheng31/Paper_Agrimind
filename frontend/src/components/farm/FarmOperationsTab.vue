@@ -25,20 +25,20 @@
         <thead class="bg-slate-50 dark:bg-slate-900/50">
           <tr>
             <th
-              class="border-b border-slate-200 px-4 py-3 text-left text-sm font-medium
+              class="border-b border-slate-200 px-4 py-3 text-left text-base font-medium
                 text-slate-700 dark:border-slate-700 dark:text-slate-300"
             >
               時間
             </th>
             <th
-              class="border-b border-slate-200 px-4 py-3 text-left text-sm font-medium
+              class="border-b border-slate-200 px-4 py-3 text-left text-base font-medium
                 text-slate-700 dark:border-slate-700 dark:text-slate-300"
             >
               描述
             </th>
             <th
               v-if="isAdmin"
-              class="w-24 border-b border-slate-200 px-4 py-3 text-center text-sm font-medium
+              class="w-24 border-b border-slate-200 px-4 py-3 text-center text-base font-medium
                 text-slate-700 dark:border-slate-700 dark:text-slate-300"
             >
               操作
@@ -52,13 +52,13 @@
             class="transition hover:bg-slate-50 dark:hover:bg-slate-700/50"
           >
             <td
-              class="border-b border-slate-200 px-4 py-3 text-sm whitespace-nowrap text-slate-600
+              class="border-b border-slate-200 px-4 py-3 text-base whitespace-nowrap text-slate-600
                 dark:border-slate-700 dark:text-slate-400"
             >
               {{ formatDateTime(op.performed_at) }}
             </td>
             <td
-              class="border-b border-slate-200 px-4 py-3 text-sm text-slate-800
+              class="border-b border-slate-200 px-4 py-3 text-base text-slate-800
                 dark:border-slate-700 dark:text-slate-200"
             >
               {{ op.description }}
@@ -82,7 +82,7 @@
       v-if="total > pageSize"
       class="mt-4 flex flex-col items-center justify-between gap-4 sm:flex-row"
     >
-      <div class="order-2 text-sm text-slate-600 sm:order-1 dark:text-slate-400">
+      <div class="order-2 text-base text-slate-600 sm:order-1 dark:text-slate-400">
         顯示 {{ (currentPage - 1) * pageSize + 1 }} -
         {{ Math.min(currentPage * pageSize, total) }} 筆，共 {{ total }} 筆
       </div>
@@ -145,7 +145,7 @@
           <p class="mb-6 text-slate-600 dark:text-slate-400">
             確定要刪除這筆操作記錄嗎？
             <br />
-            <span class="text-sm text-slate-500 dark:text-slate-500">
+            <span class="text-base text-slate-500 dark:text-slate-500">
               時間：{{ formatDateTime(deleteTarget.performed_at) }}
               <br />
               內容：{{ deleteTarget.description }}

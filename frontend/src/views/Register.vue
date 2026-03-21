@@ -6,7 +6,7 @@
 
         <form @submit.prevent="handleRegister" class="space-y-4">
           <div>
-            <label for="username" class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
+            <label for="username" class="mb-1 block text-base font-medium text-slate-700 dark:text-slate-300">
               用戶名稱
             </label>
             <input
@@ -21,7 +21,7 @@
           </div>
 
           <div>
-            <label for="email" class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
+            <label for="email" class="mb-1 block text-base font-medium text-slate-700 dark:text-slate-300">
               電子郵件
             </label>
             <input
@@ -36,7 +36,7 @@
           </div>
 
           <div>
-            <label for="password" class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
+            <label for="password" class="mb-1 block text-base font-medium text-slate-700 dark:text-slate-300">
               密碼
             </label>
             <input
@@ -61,7 +61,7 @@
           </button>
         </form>
 
-        <div class="mt-4 text-center text-sm text-slate-600 dark:text-slate-400">
+        <div class="mt-4 text-center text-base text-slate-600 dark:text-slate-400">
           已經有帳號？
           <router-link to="/login" class="text-emerald-600 hover:underline dark:text-emerald-400"> 立即登入 </router-link>
         </div>

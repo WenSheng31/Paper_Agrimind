@@ -27,56 +27,56 @@
         <h3 class="mb-4 text-lg font-semibold text-slate-800 dark:text-white">最新數據</h3>
         <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
           <div>
-            <p class="text-xs text-slate-600 md:text-sm dark:text-slate-400">環境溫度</p>
+            <p class="text-base text-slate-600 dark:text-slate-400">環境溫度</p>
             <p class="text-xl font-bold text-slate-800 md:text-2xl dark:text-white">
               {{ latestSensorData.temperature?.toFixed(1) || '-' }}
               <span class="text-sm font-normal text-slate-500 dark:text-slate-400">°C</span>
             </p>
           </div>
           <div>
-            <p class="text-xs text-slate-600 md:text-sm dark:text-slate-400">環境濕度</p>
+            <p class="text-base text-slate-600 dark:text-slate-400">環境濕度</p>
             <p class="text-xl font-bold text-slate-800 md:text-2xl dark:text-white">
               {{ latestSensorData.humidity?.toFixed(1) || '-' }}
               <span class="text-sm font-normal text-slate-500 dark:text-slate-400">%</span>
             </p>
           </div>
           <div>
-            <p class="text-xs text-slate-600 md:text-sm dark:text-slate-400">降水量</p>
+            <p class="text-base text-slate-600 dark:text-slate-400">降水量</p>
             <p class="text-xl font-bold text-slate-800 md:text-2xl dark:text-white">
               {{ latestSensorData.precipitation?.toFixed(1) || '-' }}
               <span class="text-sm font-normal text-slate-500 dark:text-slate-400">mm</span>
             </p>
           </div>
           <div>
-            <p class="text-xs text-slate-600 md:text-sm dark:text-slate-400">日照時數</p>
+            <p class="text-base text-slate-600 dark:text-slate-400">日照時數</p>
             <p class="text-xl font-bold text-slate-800 md:text-2xl dark:text-white">
               {{ latestSensorData.sunshine_hours?.toFixed(1) || '-' }}
               <span class="text-sm font-normal text-slate-500 dark:text-slate-400">hr</span>
             </p>
           </div>
           <div>
-            <p class="text-xs text-slate-600 md:text-sm dark:text-slate-400">土壤濕度</p>
+            <p class="text-base text-slate-600 dark:text-slate-400">土壤濕度</p>
             <p class="text-xl font-bold text-slate-800 md:text-2xl dark:text-white">
               {{ latestSensorData.soil_moisture?.toFixed(1) || '-' }}
               <span class="text-sm font-normal text-slate-500 dark:text-slate-400">%</span>
             </p>
           </div>
           <div>
-            <p class="text-xs text-slate-600 md:text-sm dark:text-slate-400">土壤氮 (N)</p>
+            <p class="text-base text-slate-600 dark:text-slate-400">土壤氮 (N)</p>
             <p class="text-xl font-bold text-slate-800 md:text-2xl dark:text-white">
               {{ latestSensorData.soil_n?.toFixed(1) || '-' }}
               <span class="text-sm font-normal text-slate-500 dark:text-slate-400">mg/kg</span>
             </p>
           </div>
           <div>
-            <p class="text-xs text-slate-600 md:text-sm dark:text-slate-400">土壤磷 (P)</p>
+            <p class="text-base text-slate-600 dark:text-slate-400">土壤磷 (P)</p>
             <p class="text-xl font-bold text-slate-800 md:text-2xl dark:text-white">
               {{ latestSensorData.soil_p?.toFixed(1) || '-' }}
               <span class="text-sm font-normal text-slate-500 dark:text-slate-400">mg/kg</span>
             </p>
           </div>
           <div>
-            <p class="text-xs text-slate-600 md:text-sm dark:text-slate-400">土壤鉀 (K)</p>
+            <p class="text-base text-slate-600 dark:text-slate-400">土壤鉀 (K)</p>
             <p class="text-xl font-bold text-slate-800 md:text-2xl dark:text-white">
               {{ latestSensorData.soil_k?.toFixed(1) || '-' }}
               <span class="text-sm font-normal text-slate-500 dark:text-slate-400">mg/kg</span>
@@ -93,62 +93,62 @@
             <thead class="bg-slate-50 dark:bg-slate-900/50">
               <tr>
                 <th
-                  class="border-b border-slate-200 px-4 py-3 text-left text-sm font-medium
+                  class="border-b border-slate-200 px-4 py-3 text-left text-base font-medium
                     text-slate-700 dark:border-slate-700 dark:text-slate-300"
                 >
                   時間
                 </th>
                 <th
-                  class="border-b border-slate-200 px-4 py-3 text-left text-sm font-medium
+                  class="border-b border-slate-200 px-4 py-3 text-left text-base font-medium
                     text-slate-700 dark:border-slate-700 dark:text-slate-300"
                 >
                   溫度
                 </th>
                 <th
-                  class="border-b border-slate-200 px-4 py-3 text-left text-sm font-medium
+                  class="border-b border-slate-200 px-4 py-3 text-left text-base font-medium
                     text-slate-700 dark:border-slate-700 dark:text-slate-300"
                 >
                   濕度
                 </th>
                 <th
-                  class="border-b border-slate-200 px-4 py-3 text-left text-sm font-medium
+                  class="border-b border-slate-200 px-4 py-3 text-left text-base font-medium
                     text-slate-700 dark:border-slate-700 dark:text-slate-300"
                 >
                   降水
                 </th>
                 <th
-                  class="border-b border-slate-200 px-4 py-3 text-left text-sm font-medium
+                  class="border-b border-slate-200 px-4 py-3 text-left text-base font-medium
                     text-slate-700 dark:border-slate-700 dark:text-slate-300"
                 >
                   日照
                 </th>
                 <th
-                  class="border-b border-slate-200 px-4 py-3 text-left text-sm font-medium
+                  class="border-b border-slate-200 px-4 py-3 text-left text-base font-medium
                     text-slate-700 dark:border-slate-700 dark:text-slate-300"
                 >
                   土壤濕度
                 </th>
                 <th
-                  class="border-b border-slate-200 px-4 py-3 text-left text-sm font-medium
+                  class="border-b border-slate-200 px-4 py-3 text-left text-base font-medium
                     text-slate-700 dark:border-slate-700 dark:text-slate-300"
                 >
                   氮(N)
                 </th>
                 <th
-                  class="border-b border-slate-200 px-4 py-3 text-left text-sm font-medium
+                  class="border-b border-slate-200 px-4 py-3 text-left text-base font-medium
                     text-slate-700 dark:border-slate-700 dark:text-slate-300"
                 >
                   磷(P)
                 </th>
                 <th
-                  class="border-b border-slate-200 px-4 py-3 text-left text-sm font-medium
+                  class="border-b border-slate-200 px-4 py-3 text-left text-base font-medium
                     text-slate-700 dark:border-slate-700 dark:text-slate-300"
                 >
                   鉀(K)
                 </th>
                 <th
                   v-if="isAdmin"
-                  class="w-16 border-b border-slate-200 px-4 py-3 text-center text-sm font-medium
+                  class="w-16 border-b border-slate-200 px-4 py-3 text-center text-base font-medium
                     text-slate-700 dark:border-slate-700 dark:text-slate-300"
                 >
                   操作
@@ -162,55 +162,55 @@
                 class="transition hover:bg-slate-50 dark:hover:bg-slate-700/50"
               >
                 <td
-                  class="border-b border-slate-200 px-4 py-3 text-sm text-slate-600
+                  class="border-b border-slate-200 px-4 py-3 text-base text-slate-600
                     dark:border-slate-700 dark:text-slate-400"
                 >
                   {{ formatDateTime(item.timestamp) }}
                 </td>
                 <td
-                  class="border-b border-slate-200 px-4 py-3 text-sm text-slate-800
+                  class="border-b border-slate-200 px-4 py-3 text-base text-slate-800
                     dark:border-slate-700 dark:text-slate-200"
                 >
                   {{ item.temperature?.toFixed(1) || '-' }}°C
                 </td>
                 <td
-                  class="border-b border-slate-200 px-4 py-3 text-sm text-slate-800
+                  class="border-b border-slate-200 px-4 py-3 text-base text-slate-800
                     dark:border-slate-700 dark:text-slate-200"
                 >
                   {{ item.humidity?.toFixed(1) || '-' }}%
                 </td>
                 <td
-                  class="border-b border-slate-200 px-4 py-3 text-sm text-slate-800
+                  class="border-b border-slate-200 px-4 py-3 text-base text-slate-800
                     dark:border-slate-700 dark:text-slate-200"
                 >
                   {{ item.precipitation?.toFixed(1) || '-' }}mm
                 </td>
                 <td
-                  class="border-b border-slate-200 px-4 py-3 text-sm text-slate-800
+                  class="border-b border-slate-200 px-4 py-3 text-base text-slate-800
                     dark:border-slate-700 dark:text-slate-200"
                 >
                   {{ item.sunshine_hours?.toFixed(1) || '-' }}hr
                 </td>
                 <td
-                  class="border-b border-slate-200 px-4 py-3 text-sm text-slate-800
+                  class="border-b border-slate-200 px-4 py-3 text-base text-slate-800
                     dark:border-slate-700 dark:text-slate-200"
                 >
                   {{ item.soil_moisture?.toFixed(1) || '-' }}%
                 </td>
                 <td
-                  class="border-b border-slate-200 px-4 py-3 text-sm text-slate-800
+                  class="border-b border-slate-200 px-4 py-3 text-base text-slate-800
                     dark:border-slate-700 dark:text-slate-200"
                 >
                   {{ item.soil_n?.toFixed(1) || '-' }}
                 </td>
                 <td
-                  class="border-b border-slate-200 px-4 py-3 text-sm text-slate-800
+                  class="border-b border-slate-200 px-4 py-3 text-base text-slate-800
                     dark:border-slate-700 dark:text-slate-200"
                 >
                   {{ item.soil_p?.toFixed(1) || '-' }}
                 </td>
                 <td
-                  class="border-b border-slate-200 px-4 py-3 text-sm text-slate-800
+                  class="border-b border-slate-200 px-4 py-3 text-base text-slate-800
                     dark:border-slate-700 dark:text-slate-200"
                 >
                   {{ item.soil_k?.toFixed(1) || '-' }}
@@ -235,7 +235,7 @@
           v-if="total > pageSize"
           class="mt-4 flex flex-col items-center justify-between gap-4 sm:flex-row"
         >
-          <div class="order-2 text-sm text-slate-600 sm:order-1 dark:text-slate-400">
+          <div class="order-2 text-base text-slate-600 sm:order-1 dark:text-slate-400">
             顯示 {{ (currentPage - 1) * pageSize + 1 }} -
             {{ Math.min(currentPage * pageSize, total) }} 筆，共 {{ total }} 筆
           </div>
@@ -300,7 +300,7 @@
           <p class="mb-6 text-slate-600 dark:text-slate-400">
             確定要刪除這筆感測器數據嗎？
             <br />
-            <span class="text-sm text-slate-500 dark:text-slate-500"
+            <span class="text-base text-slate-500 dark:text-slate-500"
               >時間：{{ formatDateTime(deleteTarget.timestamp) }}</span
             >
           </p>

@@ -7,7 +7,7 @@
     <!-- 載入失敗 -->
     <div v-if="status === 'error'" class="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-slate-100 dark:bg-slate-700 text-slate-400">
       <ImageOff :size="errorIconSize" />
-      <span v-if="showErrorText" class="text-sm">圖片無法載入</span>
+      <span v-if="showErrorText" class="text-base">圖片無法載入</span>
     </div>
     <!-- 圖片（用 opacity 控制顯示，不用 v-show/display:none，避免 lazy loading 失效） -->
     <img

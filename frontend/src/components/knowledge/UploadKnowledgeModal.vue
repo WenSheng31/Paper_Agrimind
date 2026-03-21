@@ -15,7 +15,7 @@
             :key="tab.key"
             @click="activeTab = tab.key"
             :class="[
-              'cursor-pointer rounded px-4 py-2 text-sm font-medium transition',
+              'cursor-pointer rounded px-4 py-2 text-base font-medium transition',
               activeTab === tab.key
                 ? 'bg-emerald-600 text-white'
                 : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600',
@@ -28,7 +28,7 @@
         <form @submit.prevent="handleSubmit" class="space-y-4">
           <!-- 標題 -->
           <div>
-            <label class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">標題</label>
+            <label class="mb-1 block text-base font-medium text-slate-700 dark:text-slate-300">標題</label>
             <input
               v-model="title"
               type="text"
@@ -41,7 +41,7 @@
 
           <!-- 純文字 Tab -->
           <div v-if="activeTab === 'text'">
-            <label class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">內容</label>
+            <label class="mb-1 block text-base font-medium text-slate-700 dark:text-slate-300">內容</label>
             <textarea
               v-model="content"
               rows="8"
@@ -54,12 +54,12 @@
 
           <!-- PDF Tab -->
           <div v-if="activeTab === 'pdf'">
-            <label class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">PDF 檔案</label>
+            <label class="mb-1 block text-base font-medium text-slate-700 dark:text-slate-300">PDF 檔案</label>
             <input
               type="file"
               accept=".pdf"
               @change="onFileChange"
-              class="w-full rounded border border-slate-300 px-3 py-2 text-sm
+              class="w-full rounded border border-slate-300 px-3 py-2 text-base
                 dark:border-slate-600 dark:bg-slate-950 dark:text-white"
             />
           </div>

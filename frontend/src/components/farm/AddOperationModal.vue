@@ -9,7 +9,7 @@
         <h2 class="mb-4 text-2xl font-bold text-slate-800 dark:text-white">新增農務記錄</h2>
         <form @submit.prevent="handleSubmit" class="space-y-4">
           <div>
-            <label class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">紀錄描述</label>
+            <label class="mb-1 block text-base font-medium text-slate-700 dark:text-slate-300">紀錄描述</label>
             <textarea
               v-model="formData.description"
               rows="4"

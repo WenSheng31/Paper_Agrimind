@@ -9,7 +9,7 @@
         <h2 class="mb-4 text-2xl font-bold text-slate-800 dark:text-white">編輯農場</h2>
         <form @submit.prevent="handleSubmit" class="space-y-4">
           <div>
-            <label class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">農場名稱</label>
+            <label class="mb-1 block text-base font-medium text-slate-700 dark:text-slate-300">農場名稱</label>
             <input
               v-model="formData.name"
               type="text"
@@ -19,7 +19,7 @@
             />
           </div>
           <div>
-            <label class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">位置</label>
+            <label class="mb-1 block text-base font-medium text-slate-700 dark:text-slate-300">位置</label>
             <input
               v-model="formData.location"
               type="text"
@@ -28,7 +28,7 @@
             />
           </div>
           <div>
-            <label class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">描述</label>
+            <label class="mb-1 block text-base font-medium text-slate-700 dark:text-slate-300">描述</label>
             <textarea
               v-model="formData.description"
               rows="3"

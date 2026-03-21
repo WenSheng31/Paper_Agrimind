@@ -8,7 +8,7 @@
           <div
             v-if="showTooltip"
             class="absolute bottom-20 right-0 w-48 rounded-lg border border-slate-200 bg-white
-              p-3 text-sm text-slate-700 shadow-lg dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+              p-3 text-base text-slate-700 shadow-lg dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
           >
             <button
               @click="dismissTooltip"
@@ -70,14 +70,14 @@
           <!-- 問題範例（無訊息時顯示） -->
           <div v-if="messages.length === 0 && !loading" key="suggestions" class="flex h-full flex-col items-center justify-center gap-4">
             <Bot :size="40" class="text-slate-300 dark:text-slate-600" />
-            <p class="text-sm text-slate-500 dark:text-slate-400">試試問我這些問題：</p>
+            <p class="text-base text-slate-500 dark:text-slate-400">試試問我這些問題：</p>
             <div class="flex w-full flex-col gap-2">
               <button
                 v-for="(q, i) in suggestedQuestions"
                 :key="i"
                 @click="sendSuggestion(q)"
                 class="w-full cursor-pointer rounded border border-slate-200 bg-white px-4 py-3
-                  text-left text-sm text-slate-700 transition hover:border-emerald-400 hover:bg-emerald-50
+                  text-left text-base text-slate-700 transition hover:border-emerald-400 hover:bg-emerald-50
                   dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300
                   dark:hover:border-emerald-500 dark:hover:bg-emerald-900/20"
               >
@@ -138,10 +138,10 @@
                   <div v-if="expandedTools[`${msg.id}-${idx}`]" class="space-y-2 px-2 pt-0 pb-2">
                     <!-- 輸入參數 -->
                     <div>
-                      <div class="mb-1 text-xs font-semibold text-slate-600 dark:text-slate-400">輸入參數:</div>
+                      <div class="mb-1 text-sm font-semibold text-slate-600 dark:text-slate-400">輸入參數:</div>
                       <div
                         class="overflow-x-auto rounded border border-slate-100 bg-white p-2
-                          font-mono text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400"
+                          font-mono text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400"
                       >
                         <pre class="whitespace-pre-wrap">{{
                           JSON.stringify(tool.input, null, 2)
@@ -151,10 +151,10 @@
 
                     <!-- 返回值 -->
                     <div v-if="tool.output">
-                      <div class="mb-1 text-xs font-semibold text-slate-600 dark:text-slate-400">返回值:</div>
+                      <div class="mb-1 text-sm font-semibold text-slate-600 dark:text-slate-400">返回值:</div>
                       <div
                         class="max-h-60 overflow-x-auto overflow-y-auto rounded border
-                          border-slate-100 bg-white p-2 font-mono text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400"
+                          border-slate-100 bg-white p-2 font-mono text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400"
                       >
                         <pre class="whitespace-pre-wrap">{{ formatToolOutput(tool.output) }}</pre>
                       </div>
@@ -181,7 +181,7 @@
           <!-- 串流狀態指示器 -->
           <transition name="message" key="loading">
             <div v-if="loading" class="flex justify-start px-4 py-2">
-              <div v-if="streamingToolName" class="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
+              <div v-if="streamingToolName" class="flex items-center gap-2 text-base text-emerald-600 dark:text-emerald-400">
                 <span class="h-2 w-2 animate-ping rounded-full bg-emerald-500"></span>
                 正在呼叫: {{ getToolDisplayName(streamingToolName) }}
               </div>

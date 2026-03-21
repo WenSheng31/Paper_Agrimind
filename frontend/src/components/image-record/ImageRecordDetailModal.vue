@@ -21,9 +21,9 @@
           >
             <div>
               <h2 class="text-xl font-bold text-slate-800 dark:text-white">影像紀錄詳情</h2>
-              <div class="mt-1 flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+              <div class="mt-1 flex items-center gap-2 text-base text-slate-500 dark:text-slate-400">
                 <span
-                  class="rounded bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700
+                  class="rounded bg-emerald-100 px-2 py-0.5 text-sm font-medium text-emerald-700
                     dark:bg-emerald-900/30 dark:text-emerald-400"
                 >
                   {{ record.farm_name }}
@@ -76,7 +76,7 @@
                     v-if="isAdmin && record.images.length > 1"
                     @click="confirmRemoveImage(img.id)"
                     class="absolute -top-1 -right-1 flex h-5 w-5 cursor-pointer items-center
-                      justify-center rounded-full bg-red-500 text-xs text-white opacity-100
+                      justify-center rounded-full bg-red-500 text-sm text-white opacity-100
                       transition lg:opacity-0 lg:group-hover:opacity-100"
                   >
                     &times;
@@ -104,7 +104,7 @@
 
             <!-- AI 分析 -->
             <div class="mb-4">
-              <div v-if="analyzing" class="flex items-center gap-2 text-sm text-slate-400">
+              <div v-if="analyzing" class="flex items-center gap-2 text-base text-slate-400">
                 <div
                   class="h-3 w-3 animate-spin rounded-full border-2 border-slate-300
                     border-t-emerald-500"
@@ -113,18 +113,18 @@
               </div>
               <p
                 v-else-if="analysisText"
-                class="text-sm whitespace-pre-wrap text-slate-700 dark:text-slate-300"
+                class="text-base whitespace-pre-wrap text-slate-700 dark:text-slate-300"
               >
                 {{ analysisText }}
               </p>
-              <p v-else-if="analysisError" class="text-sm text-red-500 dark:text-red-400">
+              <p v-else-if="analysisError" class="text-base text-red-500 dark:text-red-400">
                 {{ analysisError }}
               </p>
             </div>
 
             <!-- 描述 -->
             <div class="mb-4">
-              <h3 class="mb-1 text-sm font-medium text-slate-500 dark:text-slate-400">描述</h3>
+              <h3 class="mb-1 text-base font-medium text-slate-500 dark:text-slate-400">描述</h3>
               <div v-if="!editing">
                 <p class="text-slate-700 dark:text-slate-300">
                   {{ record.description || '' }}
@@ -134,21 +134,21 @@
                 <textarea
                   v-model="editDescription"
                   rows="2"
-                  class="w-full rounded border border-slate-300 px-3 py-2 text-sm text-slate-700
+                  class="w-full rounded border border-slate-300 px-3 py-2 text-base text-slate-700
                     dark:border-slate-600 dark:bg-slate-950 dark:text-white"
                 ></textarea>
                 <div class="mt-2 flex gap-2">
                   <button
                     @click="saveDescription"
                     :disabled="saving"
-                    class="cursor-pointer rounded bg-emerald-600 px-3 py-1 text-sm text-white
+                    class="cursor-pointer rounded bg-emerald-600 px-3 py-1 text-base text-white
                       hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {{ saving ? '儲存中...' : '儲存' }}
                   </button>
                   <button
                     @click="editing = false"
-                    class="cursor-pointer rounded border border-slate-300 px-3 py-1 text-sm
+                    class="cursor-pointer rounded border border-slate-300 px-3 py-1 text-base
                       text-slate-600 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-400
                       dark:hover:bg-slate-700"
                   >

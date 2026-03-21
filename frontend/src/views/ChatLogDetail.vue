@@ -33,14 +33,14 @@
       >
         <div
           :class="[
-            'max-w-[85%] rounded p-4 text-sm',
+            'max-w-[85%] rounded p-4 text-base',
             msg.role === 'user'
               ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-900 dark:text-emerald-100'
               : 'border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200',
           ]"
         >
           <!-- 角色 + 時間 -->
-          <div class="mb-2 flex items-center gap-2 text-xs">
+          <div class="mb-2 flex items-center gap-2 text-base">
             <span class="font-medium opacity-70">
               {{ msg.role === 'user' ? '使用者' : 'AI 助手' }}
             </span>
@@ -85,19 +85,19 @@
               </button>
               <div v-if="expandedToolKeys.has(`${msg.id}-${idx}`)" class="space-y-2 px-2 pt-0 pb-2">
                 <div>
-                  <div class="mb-1 text-xs font-semibold text-slate-600 dark:text-slate-400">輸入參數:</div>
+                  <div class="mb-1 text-sm font-semibold text-slate-600 dark:text-slate-400">輸入參數:</div>
                   <div
                     class="overflow-x-auto rounded border border-slate-100 bg-white p-2
-                      font-mono text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400"
+                      font-mono text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400"
                   >
                     <pre class="whitespace-pre-wrap">{{ JSON.stringify(tc.args, null, 2) }}</pre>
                   </div>
                 </div>
                 <div v-if="tc.output">
-                  <div class="mb-1 text-xs font-semibold text-slate-600 dark:text-slate-400">返回值:</div>
+                  <div class="mb-1 text-sm font-semibold text-slate-600 dark:text-slate-400">返回值:</div>
                   <div
                     class="max-h-60 overflow-x-auto overflow-y-auto rounded border
-                      border-slate-100 bg-white p-2 font-mono text-xs text-slate-500
+                      border-slate-100 bg-white p-2 font-mono text-sm text-slate-500
                       dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400"
                   >
                     <pre class="whitespace-pre-wrap">{{ formatToolOutput(tc.output) }}</pre>

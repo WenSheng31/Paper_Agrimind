@@ -11,11 +11,11 @@
         <form @submit.prevent="handleSubmit">
           <!-- 農場選擇 -->
           <div class="mb-4">
-            <label class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">農場 *</label>
+            <label class="mb-1 block text-base font-medium text-slate-700 dark:text-slate-300">農場 *</label>
             <select
               v-model="farmId"
               required
-              class="w-full cursor-pointer rounded border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700
+              class="w-full cursor-pointer rounded border border-slate-300 bg-white px-3 py-2 text-base text-slate-700
                 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300"
             >
               <option value="" disabled>請選擇農場</option>
@@ -25,7 +25,7 @@
 
           <!-- 描述 -->
           <div class="mb-4">
-            <label class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">描述（選填）</label>
+            <label class="mb-1 block text-base font-medium text-slate-700 dark:text-slate-300">描述（選填）</label>
             <textarea
               v-model="description"
               rows="2"
@@ -37,7 +37,7 @@
 
           <!-- 圖片上傳 -->
           <div class="mb-4">
-            <label class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
+            <label class="mb-1 block text-base font-medium text-slate-700 dark:text-slate-300">
               圖片 *（最多 5 張，每張最大 5MB）
             </label>
             <input
@@ -53,7 +53,7 @@
               @click="$refs.fileInput.click()"
               :disabled="previews.length >= 5"
               class="w-full cursor-pointer rounded border-2 border-dashed border-slate-300 px-4 py-6
-                text-sm text-slate-500 transition hover:border-emerald-500 hover:text-emerald-600
+                text-base text-slate-500 transition hover:border-emerald-500 hover:text-emerald-600
                 disabled:cursor-not-allowed disabled:opacity-50
                 dark:border-slate-600 dark:text-slate-400 dark:hover:border-emerald-500"
             >
@@ -68,7 +68,7 @@
                   type="button"
                   @click="removeFile(i)"
                   class="absolute -top-1 -right-1 flex h-5 w-5 cursor-pointer items-center justify-center
-                    rounded-full bg-red-500 text-xs text-white opacity-0 transition group-hover:opacity-100"
+                    rounded-full bg-red-500 text-sm text-white opacity-0 transition group-hover:opacity-100"
                 >
                   &times;
                 </button>

@@ -27,7 +27,7 @@
     <!-- 文件列表 -->
     <div v-else>
       <div id="knowledge-table" class="overflow-x-auto rounded border border-slate-200 dark:border-slate-700">
-        <table class="w-full min-w-[600px] text-left text-sm">
+        <table class="w-full min-w-[600px] text-left text-base">
           <thead class="bg-slate-50 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
             <tr>
               <th class="px-4 py-3 font-medium">標題</th>
@@ -64,15 +64,15 @@
             <!-- 展開內容 -->
             <tr v-if="expandedTitle === doc.title" class="bg-slate-50 dark:bg-slate-800/50">
               <td colspan="5" class="px-4 py-4">
-                <div v-if="chunksLoading" class="text-sm text-slate-500 dark:text-slate-400">載入中...</div>
+                <div v-if="chunksLoading" class="text-base text-slate-500 dark:text-slate-400">載入中...</div>
                 <div v-else class="max-h-96 space-y-3 overflow-y-auto">
                   <div
                     v-for="chunk in chunks"
                     :key="chunk.chunk_index"
                     class="rounded border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900"
                   >
-                    <div class="mb-1 text-xs font-medium text-slate-400 dark:text-slate-500">片段 {{ chunk.chunk_index + 1 }}</div>
-                    <p class="whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-300">{{ chunk.content }}</p>
+                    <div class="mb-1 text-base font-medium text-slate-400 dark:text-slate-500">片段 {{ chunk.chunk_index + 1 }}</div>
+                    <p class="whitespace-pre-wrap text-base text-slate-700 dark:text-slate-300">{{ chunk.content }}</p>
                   </div>
                 </div>
               </td>
@@ -87,19 +87,19 @@
         <button
           @click="goToPage(currentPage - 1)"
           :disabled="currentPage <= 1 || loading"
-          class="cursor-pointer rounded border border-slate-300 px-3 py-1 text-sm transition
+          class="cursor-pointer rounded border border-slate-300 px-3 py-1 text-base transition
             hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50
             dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
         >
           上一頁
         </button>
-        <span class="text-sm text-slate-600 dark:text-slate-400">
+        <span class="text-base text-slate-600 dark:text-slate-400">
           {{ currentPage }} / {{ totalPages }}
         </span>
         <button
           @click="goToPage(currentPage + 1)"
           :disabled="currentPage >= totalPages || loading"
-          class="cursor-pointer rounded border border-slate-300 px-3 py-1 text-sm transition
+          class="cursor-pointer rounded border border-slate-300 px-3 py-1 text-base transition
             hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50
             dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
         >

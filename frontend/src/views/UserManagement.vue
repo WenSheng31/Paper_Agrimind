@@ -17,7 +17,7 @@
     <!-- 使用者列表 -->
     <div v-else>
       <div class="overflow-x-auto rounded border border-slate-200 dark:border-slate-700">
-        <table class="w-full min-w-[900px] text-left text-sm">
+        <table class="w-full min-w-[900px] text-left text-base">
           <thead class="bg-slate-50 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
             <tr>
               <th class="px-4 py-3 font-medium">使用者名稱</th>
@@ -37,7 +37,7 @@
                   :class="u.is_admin
                     ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
                     : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'"
-                  class="inline-block rounded-full px-2.5 py-0.5 text-xs font-medium"
+                  class="inline-block rounded-full px-2.5 py-0.5 text-sm font-medium"
                 >
                   {{ u.is_admin ? '管理員' : '一般用戶' }}
                 </span>
@@ -47,7 +47,7 @@
                   :class="u.is_active
                     ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
                     : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'"
-                  class="inline-block rounded-full px-2.5 py-0.5 text-xs font-medium"
+                  class="inline-block rounded-full px-2.5 py-0.5 text-sm font-medium"
                 >
                   {{ u.is_active ? '啟用' : '停用' }}
                 </span>
@@ -92,7 +92,7 @@
                     <Trash2 :size="18" />
                   </button>
                 </div>
-                <span v-else class="text-xs text-slate-400 dark:text-slate-500">目前帳號</span>
+                <span v-else class="text-base text-slate-400 dark:text-slate-500">目前帳號</span>
               </td>
             </tr>
           </tbody>
@@ -109,14 +109,14 @@
       >
         <div class="m-4 w-full max-w-md rounded bg-white p-6 dark:bg-slate-800">
           <h2 class="mb-4 text-2xl font-bold text-slate-800 dark:text-white">重設密碼</h2>
-          <p class="mb-4 text-sm text-slate-600 dark:text-slate-400">
+          <p class="mb-4 text-base text-slate-600 dark:text-slate-400">
             為「{{ resetTarget.username }}」設定新密碼
           </p>
           <input
             v-model="newPassword"
             type="password"
             placeholder="請輸入新密碼"
-            class="mb-4 w-full rounded border border-slate-300 bg-white px-3 py-2 text-sm
+            class="mb-4 w-full rounded border border-slate-300 bg-white px-3 py-2 text-base
               text-slate-900 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500
               dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:focus:border-emerald-500"
           />

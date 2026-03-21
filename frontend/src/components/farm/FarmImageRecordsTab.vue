@@ -40,13 +40,13 @@
           </div>
           <div class="p-4">
             <div class="mb-2 flex items-center gap-2">
-              <span class="text-xs text-slate-400">{{ record.images.length }} 張</span>
+              <span class="text-base text-slate-400">{{ record.images.length }} 張</span>
             </div>
-            <p v-if="record.description" class="line-clamp-2 text-sm text-slate-600 dark:text-slate-400">
+            <p v-if="record.description" class="line-clamp-2 text-base text-slate-600 dark:text-slate-400">
               {{ record.description }}
             </p>
             <div class="mt-4 border-t border-slate-200 pt-4 dark:border-slate-700">
-              <p class="text-sm text-slate-500 dark:text-slate-500">{{ formatDate(record.created_at) }}</p>
+              <p class="text-base text-slate-500 dark:text-slate-500">{{ formatDate(record.created_at) }}</p>
             </div>
           </div>
         </div>
@@ -57,17 +57,17 @@
         <button
           @click="goToPage(currentPage - 1)"
           :disabled="currentPage <= 1"
-          class="cursor-pointer rounded border border-slate-300 px-3 py-1 text-sm transition
+          class="cursor-pointer rounded border border-slate-300 px-3 py-1 text-base transition
             hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50
             dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
         >
           上一頁
         </button>
-        <span class="text-sm text-slate-600 dark:text-slate-400">{{ currentPage }} / {{ totalPages }}</span>
+        <span class="text-base text-slate-600 dark:text-slate-400">{{ currentPage }} / {{ totalPages }}</span>
         <button
           @click="goToPage(currentPage + 1)"
           :disabled="currentPage >= totalPages"
-          class="cursor-pointer rounded border border-slate-300 px-3 py-1 text-sm transition
+          class="cursor-pointer rounded border border-slate-300 px-3 py-1 text-base transition
             hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50
             dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
         >

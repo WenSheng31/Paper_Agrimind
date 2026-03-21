@@ -40,7 +40,7 @@
           </div>
           <p v-if="farm.description" class="text-slate-600 dark:text-slate-400">{{ farm.description }}</p>
           <div class="mt-4 border-t border-slate-200 pt-4 dark:border-slate-700">
-            <p class="text-sm text-slate-500 dark:text-slate-500">
+            <p class="text-base text-slate-500 dark:text-slate-500">
               建立時間：{{ formatDate(farm.created_at) }}
             </p>
           </div>
@@ -62,11 +62,11 @@
           dark:bg-slate-800"
       >
         <div class="border-b border-slate-200 dark:border-slate-700">
-          <div class="flex">
+          <div class="flex overflow-x-auto">
             <button
               @click="activeTab = 'charts'"
               :class="[
-                'cursor-pointer px-6 py-3 font-medium transition',
+                'cursor-pointer whitespace-nowrap px-4 py-3 font-medium transition sm:px-6',
                 activeTab === 'charts'
                   ? `border-b-2 border-emerald-600 text-emerald-600 dark:border-emerald-400
                     dark:text-emerald-400`
@@ -79,7 +79,7 @@
             <button
               @click="activeTab = 'sensor'"
               :class="[
-                'cursor-pointer px-6 py-3 font-medium transition',
+                'cursor-pointer whitespace-nowrap px-4 py-3 font-medium transition sm:px-6',
                 activeTab === 'sensor'
                   ? `border-b-2 border-emerald-600 text-emerald-600 dark:border-emerald-400
                     dark:text-emerald-400`
@@ -92,7 +92,7 @@
             <button
               @click="activeTab = 'operations'"
               :class="[
-                'cursor-pointer px-6 py-3 font-medium transition',
+                'cursor-pointer whitespace-nowrap px-4 py-3 font-medium transition sm:px-6',
                 activeTab === 'operations'
                   ? `border-b-2 border-emerald-600 text-emerald-600 dark:border-emerald-400
                     dark:text-emerald-400`
@@ -105,7 +105,7 @@
             <button
               @click="activeTab = 'images'"
               :class="[
-                'cursor-pointer px-6 py-3 font-medium transition',
+                'cursor-pointer whitespace-nowrap px-4 py-3 font-medium transition sm:px-6',
                 activeTab === 'images'
                   ? `border-b-2 border-emerald-600 text-emerald-600 dark:border-emerald-400
                     dark:text-emerald-400`

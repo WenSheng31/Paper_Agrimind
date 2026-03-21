@@ -15,9 +15,9 @@
         <div class="p-4">
           <div v-if="loading" class="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
             <Bot :size="20" class="animate-pulse" />
-            <span class="text-sm">AI 分析中...</span>
+            <span class="text-base">AI 分析中...</span>
           </div>
-          <div v-else-if="content" class="text-sm text-slate-600 dark:text-slate-300">
+          <div v-else-if="content" class="text-base text-slate-600 dark:text-slate-300">
             <div v-html="renderedContent" class="prose prose-sm max-w-none dark:prose-invert"></div>
           </div>
         </div>

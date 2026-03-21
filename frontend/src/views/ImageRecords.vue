@@ -7,7 +7,7 @@
         <select
           v-model="selectedFarmId"
           @change="onFilterChange"
-          class="cursor-pointer rounded border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700
+          class="cursor-pointer rounded border border-slate-300 bg-white px-3 py-2 text-base text-slate-700
             dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300"
         >
           <option :value="null">所有農場</option>
@@ -58,17 +58,17 @@
         <!-- 資訊 -->
         <div class="p-4">
           <div class="mb-2 flex items-center gap-2">
-            <span class="rounded bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700
+            <span class="rounded bg-emerald-100 px-2 py-0.5 text-sm font-medium text-emerald-700
               dark:bg-emerald-900/30 dark:text-emerald-400">
               {{ record.farm_name }}
             </span>
-            <span class="text-xs text-slate-400">{{ record.images.length }} 張</span>
+            <span class="text-base text-slate-400">{{ record.images.length }} 張</span>
           </div>
-          <p v-if="record.description" class="line-clamp-2 text-sm text-slate-600 dark:text-slate-400">
+          <p v-if="record.description" class="line-clamp-2 text-base text-slate-600 dark:text-slate-400">
             {{ record.description }}
           </p>
           <div class="mt-4 border-t border-slate-200 pt-4 dark:border-slate-700">
-            <p class="text-sm text-slate-500 dark:text-slate-500">{{ formatDate(record.created_at) }}</p>
+            <p class="text-base text-slate-500 dark:text-slate-500">{{ formatDate(record.created_at) }}</p>
           </div>
         </div>
       </div>
@@ -79,19 +79,19 @@
       <button
         @click="goToPage(currentPage - 1)"
         :disabled="currentPage <= 1 || loading"
-        class="cursor-pointer rounded border border-slate-300 px-3 py-1 text-sm transition
+        class="cursor-pointer rounded border border-slate-300 px-3 py-1 text-base transition
           hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50
           dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
       >
         上一頁
       </button>
-      <span class="text-sm text-slate-600 dark:text-slate-400">
+      <span class="text-base text-slate-600 dark:text-slate-400">
         {{ currentPage }} / {{ totalPages }}
       </span>
       <button
         @click="goToPage(currentPage + 1)"
         :disabled="currentPage >= totalPages || loading"
-        class="cursor-pointer rounded border border-slate-300 px-3 py-1 text-sm transition
+        class="cursor-pointer rounded border border-slate-300 px-3 py-1 text-base transition
           hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50
           dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
       >

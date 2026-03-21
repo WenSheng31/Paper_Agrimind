@@ -3,21 +3,26 @@
     class="relative flex min-h-35 flex-col justify-center overflow-hidden rounded border
       border-emerald-500 bg-emerald-100 p-6 dark:border-emerald-700 dark:bg-emerald-950"
   >
-    <transition name="fade" mode="out-in">
-      <!-- 按鈕 -->
-      <div v-if="!loading && !content" key="button" class="flex justify-center">
-        <button
-          @click="generate"
-          class="cursor-pointer rounded bg-emerald-600 px-6 py-2 text-white transition
-            hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600"
-        >
-          生成 AI 總結
-        </button>
+    <div class="mb-3 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <Bot :size="18" class="text-emerald-600 dark:text-emerald-400" />
+        <h3 class="text-base font-semibold text-emerald-700 dark:text-emerald-300">AI 智慧分析</h3>
       </div>
+      <button
+        v-if="content"
+        @click="generate"
+        class="cursor-pointer rounded p-1.5 text-emerald-600 transition
+          hover:bg-emerald-200 dark:text-emerald-400 dark:hover:bg-emerald-900"
+        title="重新生成"
+      >
+        <RefreshCw :size="16" />
+      </button>
+    </div>
 
+    <transition name="fade" mode="out-in">
       <!-- Loading 指示器 -->
       <div
-        v-else-if="loading && !content"
+        v-if="loading && !content"
         key="loading"
         class="flex animate-pulse flex-col items-center justify-center gap-2"
       >
@@ -26,19 +31,11 @@
       </div>
 
       <!-- 回應內容 -->
-      <div v-else-if="content" key="content" class="relative">
-        <button
-          @click="generate"
-          class="absolute top-0 right-0 cursor-pointer rounded p-1.5 text-emerald-600 transition
-            hover:bg-emerald-100 dark:text-emerald-400 dark:hover:bg-emerald-900"
-          title="重新生成"
-        >
-          <RefreshCw :size="18" />
-        </button>
+      <div v-else-if="content" key="content">
         <div
           v-html="renderedContent"
           class="prose prose-sm prose-p:leading-relaxed prose-p:first:mt-0 prose-p:last:mb-0
-            max-w-none pr-10 text-slate-800 dark:text-slate-200 dark:prose-invert"
+            max-w-none text-slate-800 dark:text-slate-200 dark:prose-invert"
         ></div>
       </div>
     </transition>
@@ -90,8 +87,12 @@ async function generate() {
 onMounted(() => {
   if (props.cacheKey) {
     const cached = localStorage.getItem(props.cacheKey)
-    if (cached) content.value = cached
+    if (cached) {
+      content.value = cached
+      return
+    }
   }
+  generate()
 })
 </script>
 

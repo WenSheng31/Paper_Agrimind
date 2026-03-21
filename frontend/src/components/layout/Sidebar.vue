@@ -127,22 +127,22 @@
           class="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-600
             dark:bg-emerald-500"
         >
-          <span class="text-sm font-medium text-white">
+          <span class="text-base font-medium text-white">
             {{ user?.username?.charAt(0).toUpperCase() || '?' }}
           </span>
         </div>
         <div class="min-w-0 flex-1">
-          <div class="truncate text-sm font-medium text-slate-900 dark:text-white">
+          <div class="truncate text-base font-medium text-slate-900 dark:text-white">
             {{ user?.username || '訪客' }}
           </div>
-          <div v-if="isAdmin" class="text-xs text-emerald-600 dark:text-emerald-400">管理員</div>
-          <div v-else class="text-xs text-slate-500 dark:text-slate-400">{{ user?.email }}</div>
+          <div v-if="isAdmin" class="text-base text-emerald-600 dark:text-emerald-400">管理員</div>
+          <div v-else class="text-base text-slate-500 dark:text-slate-400">{{ user?.email }}</div>
         </div>
       </div>
       <button
         @click="handleLogout"
         class="flex w-full cursor-pointer items-center justify-center gap-2 rounded bg-slate-100 p-2
-          text-sm text-slate-700 transition hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300
+          text-base text-slate-700 transition hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300
           dark:hover:bg-slate-600"
       >
         <LogOut :size="16" />

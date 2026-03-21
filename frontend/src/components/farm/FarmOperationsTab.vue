@@ -20,8 +20,8 @@
       尚無農務記錄
     </div>
 
-    <div v-else class="overflow-x-auto">
-      <table class="w-full min-w-100 border border-slate-200 dark:border-slate-700">
+    <div v-else class="overflow-x-auto rounded border border-slate-200 dark:border-slate-700">
+      <table class="w-full min-w-100">
         <thead class="bg-slate-50 dark:bg-slate-900/50">
           <tr>
             <th

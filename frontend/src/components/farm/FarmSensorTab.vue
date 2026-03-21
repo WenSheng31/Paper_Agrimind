@@ -88,8 +88,8 @@
       <!-- 歷史數據表格 -->
       <div>
         <h3 class="mb-4 text-lg font-semibold text-slate-800 dark:text-white">歷史數據</h3>
-        <div class="overflow-x-auto">
-          <table class="w-full min-w-250 border border-slate-200 dark:border-slate-700">
+        <div class="overflow-x-auto rounded border border-slate-200 dark:border-slate-700">
+          <table class="w-full min-w-250">
             <thead class="bg-slate-50 dark:bg-slate-900/50">
               <tr>
                 <th

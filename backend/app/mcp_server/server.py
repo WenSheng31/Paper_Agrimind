@@ -471,7 +471,7 @@ def _normalize_location(location: str) -> str:
     return location.strip().replace("台", "臺")
 
 
-# 縣市對應氣象站
+# 縣市對應氣象站（即時觀測用）
 WEATHER_STATIONS = {
     "基隆市": "基隆", "基隆": "基隆",
     "臺北市": "臺北", "臺北": "臺北",
@@ -495,167 +495,322 @@ WEATHER_STATIONS = {
     "連江縣": "馬祖", "馬祖": "馬祖",
 }
 
+# 縣市對應鄉鎮預報資料集代碼（一週逐12小時）
+COUNTY_FORECAST_DATASET = {
+    "宜蘭縣": "F-D0047-003", "桃園市": "F-D0047-007",
+    "新竹縣": "F-D0047-011", "苗栗縣": "F-D0047-015",
+    "彰化縣": "F-D0047-019", "南投縣": "F-D0047-023",
+    "雲林縣": "F-D0047-027", "嘉義縣": "F-D0047-031",
+    "屏東縣": "F-D0047-035", "臺東縣": "F-D0047-039",
+    "花蓮縣": "F-D0047-043", "澎湖縣": "F-D0047-047",
+    "基隆市": "F-D0047-051", "新竹市": "F-D0047-055",
+    "嘉義市": "F-D0047-059", "臺北市": "F-D0047-063",
+    "高雄市": "F-D0047-067", "新北市": "F-D0047-071",
+    "臺中市": "F-D0047-075", "臺南市": "F-D0047-079",
+    "連江縣": "F-D0047-083", "金門縣": "F-D0047-087",
+}
+
+# 全台鄉鎮→所屬縣市映射（靜態，來源：氣象署鄉鎮預報資料集）
+TOWNSHIP_TO_COUNTY = {
+    "中寮鄉": "南投縣", "仁愛鄉": "南投縣", "信義鄉": "南投縣", "南投市": "南投縣", "名間鄉": "南投縣", "國姓鄉": "南投縣", "埔里鎮": "南投縣", "水里鄉": "南投縣", "竹山鎮": "南投縣", "草屯鎮": "南投縣", "集集鎮": "南投縣", "魚池鄉": "南投縣", "鹿谷鄉": "南投縣",
+    "中埔鄉": "嘉義縣", "六腳鄉": "嘉義縣", "大埔鄉": "嘉義縣", "大林鎮": "嘉義縣", "太保市": "嘉義縣", "布袋鎮": "嘉義縣", "新港鄉": "嘉義縣", "朴子市": "嘉義縣", "東石鄉": "嘉義縣", "梅山鄉": "嘉義縣", "民雄鄉": "嘉義縣", "水上鄉": "嘉義縣", "溪口鄉": "嘉義縣", "番路鄉": "嘉義縣", "竹崎鄉": "嘉義縣", "義竹鄉": "嘉義縣", "阿里山鄉": "嘉義縣", "鹿草鄉": "嘉義縣",
+    "七堵區": "基隆市", "仁愛區": "基隆市", "安樂區": "基隆市", "暖暖區": "基隆市", "中山區": "基隆市", "中正區": "基隆市", "信義區": "基隆市",
+    "三星鄉": "宜蘭縣", "五結鄉": "宜蘭縣", "冬山鄉": "宜蘭縣", "南澳鄉": "宜蘭縣", "員山鄉": "宜蘭縣", "壯圍鄉": "宜蘭縣", "大同鄉": "宜蘭縣", "宜蘭市": "宜蘭縣", "礁溪鄉": "宜蘭縣", "羅東鎮": "宜蘭縣", "蘇澳鎮": "宜蘭縣", "頭城鎮": "宜蘭縣",
+    "三地門鄉": "屏東縣", "九如鄉": "屏東縣", "佳冬鄉": "屏東縣", "來義鄉": "屏東縣", "內埔鄉": "屏東縣", "南州鄉": "屏東縣", "屏東市": "屏東縣", "崁頂鄉": "屏東縣", "恆春鎮": "屏東縣", "新園鄉": "屏東縣", "新埤鄉": "屏東縣", "春日鄉": "屏東縣", "東港鎮": "屏東縣", "枋寮鄉": "屏東縣", "枋山鄉": "屏東縣", "林邊鄉": "屏東縣", "泰武鄉": "屏東縣", "滿州鄉": "屏東縣", "潮州鎮": "屏東縣", "牡丹鄉": "屏東縣", "獅子鄉": "屏東縣", "琉球鄉": "屏東縣", "瑪家鄉": "屏東縣", "竹田鄉": "屏東縣", "萬丹鄉": "屏東縣", "萬巒鄉": "屏東縣", "車城鄉": "屏東縣", "里港鄉": "屏東縣", "長治鄉": "屏東縣", "霧臺鄉": "屏東縣", "高樹鄉": "屏東縣", "鹽埔鄉": "屏東縣", "麟洛鄉": "屏東縣",
+    "二林鎮": "彰化縣", "二水鄉": "彰化縣", "伸港鄉": "彰化縣", "北斗鎮": "彰化縣", "和美鎮": "彰化縣", "員林市": "彰化縣", "埔心鄉": "彰化縣", "埔鹽鄉": "彰化縣", "埤頭鄉": "彰化縣", "大城鄉": "彰化縣", "大村鄉": "彰化縣", "彰化市": "彰化縣", "永靖鄉": "彰化縣", "溪州鄉": "彰化縣", "溪湖鎮": "彰化縣", "田中鎮": "彰化縣", "田尾鄉": "彰化縣", "社頭鄉": "彰化縣", "福興鄉": "彰化縣", "秀水鄉": "彰化縣", "竹塘鄉": "彰化縣", "線西鄉": "彰化縣", "芬園鄉": "彰化縣", "花壇鄉": "彰化縣", "芳苑鄉": "彰化縣", "鹿港鎮": "彰化縣",
+    "三峽區": "新北市", "三芝區": "新北市", "三重區": "新北市", "中和區": "新北市", "五股區": "新北市", "八里區": "新北市", "土城區": "新北市", "坪林區": "新北市", "平溪區": "新北市", "新店區": "新北市", "新莊區": "新北市", "板橋區": "新北市", "林口區": "新北市", "樹林區": "新北市", "永和區": "新北市", "汐止區": "新北市", "泰山區": "新北市", "淡水區": "新北市", "深坑區": "新北市", "烏來區": "新北市", "瑞芳區": "新北市", "石碇區": "新北市", "石門區": "新北市", "萬里區": "新北市", "蘆洲區": "新北市", "貢寮區": "新北市", "金山區": "新北市", "雙溪區": "新北市", "鶯歌區": "新北市",
+    "香山區": "新竹市", "東區": "新竹市", "北區": "新竹市",
+    "五峰鄉": "新竹縣", "北埔鄉": "新竹縣", "寶山鄉": "新竹縣", "尖石鄉": "新竹縣", "峨眉鄉": "新竹縣", "新埔鎮": "新竹縣", "新豐鄉": "新竹縣", "橫山鄉": "新竹縣", "湖口鄉": "新竹縣", "竹北市": "新竹縣", "竹東鎮": "新竹縣", "芎林鄉": "新竹縣", "關西鎮": "新竹縣",
+    "中壢區": "桃園市", "八德區": "桃園市", "大園區": "桃園市", "大溪區": "桃園市", "平鎮區": "桃園市", "復興區": "桃園市", "新屋區": "桃園市", "桃園區": "桃園市", "楊梅區": "桃園市", "蘆竹區": "桃園市", "觀音區": "桃園市", "龍潭區": "桃園市", "龜山區": "桃園市",
+    "七美鄉": "澎湖縣", "望安鄉": "澎湖縣", "湖西鄉": "澎湖縣", "白沙鄉": "澎湖縣", "西嶼鄉": "澎湖縣", "馬公市": "澎湖縣",
+    "中區": "臺中市", "北屯區": "臺中市", "南屯區": "臺中市", "后里區": "臺中市", "和平區": "臺中市", "外埔區": "臺中市", "大安區": "臺中市", "大甲區": "臺中市", "大肚區": "臺中市", "大里區": "臺中市", "大雅區": "臺中市", "太平區": "臺中市", "新社區": "臺中市", "東勢區": "臺中市", "梧棲區": "臺中市", "沙鹿區": "臺中市", "清水區": "臺中市", "潭子區": "臺中市", "烏日區": "臺中市", "石岡區": "臺中市", "神岡區": "臺中市", "西區": "臺中市", "西屯區": "臺中市", "豐原區": "臺中市", "霧峰區": "臺中市", "龍井區": "臺中市",
+    "內湖區": "臺北市", "北投區": "臺北市", "南港區": "臺北市", "士林區": "臺北市", "大同區": "臺北市", "文山區": "臺北市", "松山區": "臺北市", "萬華區": "臺北市", "大安區": "臺北市",
+    "七股區": "臺南市", "下營區": "臺南市", "中西區": "臺南市", "仁德區": "臺南市", "佳里區": "臺南市", "六甲區": "臺南市", "北門區": "臺南市", "南化區": "臺南市", "善化區": "臺南市", "大內區": "臺南市", "學甲區": "臺南市", "安南區": "臺南市", "安定區": "臺南市", "安平區": "臺南市", "官田區": "臺南市", "將軍區": "臺南市", "山上區": "臺南市", "左鎮區": "臺南市", "後壁區": "臺南市", "新化區": "臺南市", "新市區": "臺南市", "新營區": "臺南市", "東山區": "臺南市", "柳營區": "臺南市", "楠西區": "臺南市", "歸仁區": "臺南市", "永康區": "臺南市", "玉井區": "臺南市", "白河區": "臺南市", "西港區": "臺南市", "關廟區": "臺南市", "鹽水區": "臺南市", "麻豆區": "臺南市", "龍崎區": "臺南市",
+    "卑南鄉": "臺東縣", "大武鄉": "臺東縣", "太麻里鄉": "臺東縣", "延平鄉": "臺東縣", "成功鎮": "臺東縣", "東河鄉": "臺東縣", "池上鄉": "臺東縣", "海端鄉": "臺東縣", "綠島鄉": "臺東縣", "臺東市": "臺東縣", "蘭嶼鄉": "臺東縣", "達仁鄉": "臺東縣", "金峰鄉": "臺東縣", "長濱鄉": "臺東縣", "關山鎮": "臺東縣", "鹿野鄉": "臺東縣",
+    "光復鄉": "花蓮縣", "卓溪鄉": "花蓮縣", "吉安鄉": "花蓮縣", "壽豐鄉": "花蓮縣", "富里鄉": "花蓮縣", "新城鄉": "花蓮縣", "玉里鎮": "花蓮縣", "瑞穗鄉": "花蓮縣", "秀林鄉": "花蓮縣", "花蓮市": "花蓮縣", "萬榮鄉": "花蓮縣", "豐濱鄉": "花蓮縣", "鳳林鎮": "花蓮縣",
+    "三灣鄉": "苗栗縣", "三義鄉": "苗栗縣", "公館鄉": "苗栗縣", "卓蘭鎮": "苗栗縣", "南庄鄉": "苗栗縣", "大湖鄉": "苗栗縣", "後龍鎮": "苗栗縣", "泰安鄉": "苗栗縣", "獅潭鄉": "苗栗縣", "竹南鎮": "苗栗縣", "苑裡鎮": "苗栗縣", "苗栗市": "苗栗縣", "西湖鄉": "苗栗縣", "通霄鎮": "苗栗縣", "造橋鄉": "苗栗縣", "銅鑼鄉": "苗栗縣", "頭份市": "苗栗縣", "頭屋鄉": "苗栗縣",
+    "北竿鄉": "連江縣", "南竿鄉": "連江縣", "東引鄉": "連江縣", "莒光鄉": "連江縣",
+    "烈嶼鄉": "金門縣", "烏坵鄉": "金門縣", "金城鎮": "金門縣", "金寧鄉": "金門縣", "金沙鎮": "金門縣", "金湖鎮": "金門縣",
+    "二崙鄉": "雲林縣", "元長鄉": "雲林縣", "北港鎮": "雲林縣", "口湖鄉": "雲林縣", "古坑鄉": "雲林縣", "四湖鄉": "雲林縣", "土庫鎮": "雲林縣", "大埤鄉": "雲林縣", "崙背鄉": "雲林縣", "斗六市": "雲林縣", "斗南鎮": "雲林縣", "東勢鄉": "雲林縣", "林內鄉": "雲林縣", "水林鄉": "雲林縣", "臺西鄉": "雲林縣", "莿桐鄉": "雲林縣", "虎尾鎮": "雲林縣", "褒忠鄉": "雲林縣", "西螺鎮": "雲林縣", "麥寮鄉": "雲林縣",
+    "三民區": "高雄市", "仁武區": "高雄市", "內門區": "高雄市", "六龜區": "高雄市", "前金區": "高雄市", "前鎮區": "高雄市", "大寮區": "高雄市", "大樹區": "高雄市", "大社區": "高雄市", "小港區": "高雄市", "岡山區": "高雄市", "左營區": "高雄市", "彌陀區": "高雄市", "新興區": "高雄市", "旗山區": "高雄市", "旗津區": "高雄市", "杉林區": "高雄市", "林園區": "高雄市", "桃源區": "高雄市", "梓官區": "高雄市", "楠梓區": "高雄市", "橋頭區": "高雄市", "永安區": "高雄市", "湖內區": "高雄市", "燕巢區": "高雄市", "田寮區": "高雄市", "甲仙區": "高雄市", "美濃區": "高雄市", "苓雅區": "高雄市", "茂林區": "高雄市", "茄萣區": "高雄市", "路竹區": "高雄市", "那瑪夏區": "高雄市", "阿蓮區": "高雄市", "鳥松區": "高雄市", "鳳山區": "高雄市", "鹽埕區": "高雄市", "鼓山區": "高雄市",
+}
+
 
 # ============== 氣象工具 ==============
 
-@mcp.tool()
-def get_weather(location: str) -> Dict[str, Any]:
-    """
-    獲取指定地點的氣象觀測資料
 
-    參數：
-    - location: 地點名稱（縣市名或氣象站名，如 "臺中市"、"臺中"、"高雄"）
+def _find_nearest_station(location: str) -> tuple:
+    """根據地點名稱找到最近的氣象站。回傳 (station_name, source_note)"""
+    # 1. 直接匹配氣象站
+    if location in WEATHER_STATIONS:
+        return WEATHER_STATIONS[location], None
 
-    返回即時觀測資料，包括溫度、濕度、氣壓、風速、降雨量等。
-    """
-    if not location or not location.strip():
-        return {"error": "請提供地點名稱，例如：臺中市、臺北、高雄"}
+    # 2. 嘗試模糊匹配（鄉鎮名去掉行政區後綴匹配縣市）
+    for suffix in ["區", "鎮", "鄉", "市"]:
+        if location.endswith(suffix):
+            short = location[:-1]
+            for county, station in WEATHER_STATIONS.items():
+                if short in county:
+                    return station, f"（數據來自{county}{station}氣象站）"
 
-    location = _normalize_location(location)
-    station_name = WEATHER_STATIONS.get(location, location)
+    # 3. 包含匹配
+    for county, station in WEATHER_STATIONS.items():
+        if location in county or county in location:
+            return station, f"（數據來自{county}{station}氣象站）"
 
-    api_key = settings.CWA_API_KEY
-    if not api_key:
-        return {"error": "未設定中央氣象署 API Key"}
+    return location, None
+
+
+def _fetch_current_weather(api_key: str, location: str) -> Dict[str, Any]:
+    """查詢即時觀測資料（O-A0001-001）"""
+    station_name, source_note = _find_nearest_station(location)
 
     url = "https://opendata.cwa.gov.tw/api/v1/rest/datastore/O-A0001-001"
-    params = {
-        "Authorization": api_key,
-        "format": "JSON",
-        "StationName": station_name,
-    }
+    params = {"Authorization": api_key, "format": "JSON", "StationName": station_name}
 
-    try:
-        response = requests.get(url, params=params, timeout=10)
-        response.raise_for_status()
-        data = response.json()
+    response = requests.get(url, params=params, timeout=10)
+    response.raise_for_status()
+    data = response.json()
 
-        if data.get("success") != "true":
-            return {"error": "API 請求失敗"}
+    if data.get("success") != "true":
+        return {"error": "即時觀測 API 請求失敗"}
 
-        records = data.get("records", {})
-        stations = records.get("Station", []) if isinstance(records, dict) else []
+    records = data.get("records", {})
+    stations = records.get("Station", []) if isinstance(records, dict) else []
 
+    if not stations:
+        # 找不到精確站名，嘗試搜尋所有站，用模糊匹配
+        params_all = {"Authorization": api_key, "format": "JSON"}
+        resp_all = requests.get(url, params=params_all, timeout=10)
+        resp_all.raise_for_status()
+        all_data = resp_all.json()
+        all_stations = all_data.get("records", {}).get("Station", [])
+        for s in all_stations:
+            if location in (s.get("StationName", "") + s.get("GeoInfo", {}).get("CountyName", "") + s.get("GeoInfo", {}).get("TownName", "")):
+                stations = [s]
+                source_note = f"（數據來自{s.get('StationName')}氣象站）"
+                break
         if not stations:
-            return {"error": f"找不到氣象站: {station_name}，請確認地點名稱"}
+            return {"error": f"找不到「{location}」附近的氣象站"}
 
-        station = stations[0]
-        obs = station.get("WeatherElement", {}) or {}
-        geo = station.get("GeoInfo", {}) or {}
-        obs_time = station.get("ObsTime", {}) or {}
-        now_data = obs.get("Now", {}) or {}
+    station = stations[0]
+    obs = station.get("WeatherElement", {}) or {}
+    geo = station.get("GeoInfo", {}) or {}
+    obs_time = station.get("ObsTime", {}) or {}
+    now_data = obs.get("Now", {}) or {}
 
-        return {
-            "station_name": station.get("StationName"),
-            "city": geo.get("CountyName"),
-            "obs_time": obs_time.get("DateTime") if isinstance(obs_time, dict) else None,
-            "weather": obs.get("Weather"),
-            "temperature": obs.get("AirTemperature"),
-            "humidity": obs.get("RelativeHumidity"),
-            "pressure": obs.get("AirPressure"),
-            "wind_speed": obs.get("WindSpeed"),
-            "wind_direction": obs.get("WindDirection"),
-            "precipitation": now_data.get("Precipitation") if isinstance(now_data, dict) else None,
+    result = {
+        "氣象站": station.get("StationName"),
+        "縣市": geo.get("CountyName"),
+        "鄉鎮": geo.get("TownName"),
+        "觀測時間": obs_time.get("DateTime") if isinstance(obs_time, dict) else None,
+        "天氣": obs.get("Weather"),
+        "溫度": obs.get("AirTemperature"),
+        "濕度": obs.get("RelativeHumidity"),
+        "氣壓": obs.get("AirPressure"),
+        "風速": obs.get("WindSpeed"),
+        "風向": obs.get("WindDirection"),
+        "降雨量": now_data.get("Precipitation") if isinstance(now_data, dict) else None,
+    }
+    if source_note:
+        result["備註"] = source_note
+    return result
+
+
+def _fetch_forecast(api_key: str, location: str) -> Dict[str, Any]:
+    """查詢鄉鎮級天氣預報"""
+    base_url = "https://opendata.cwa.gov.tw/api/v1/rest/datastore"
+    location_data = None
+    matched_county = None
+
+    # 1. 如果是縣市名，用縣市級預報
+    if location in COUNTY_FORECAST_DATASET:
+        url = f"{base_url}/F-D0047-091"
+        params = {"Authorization": api_key, "format": "JSON", "locationName": location}
+        resp = requests.get(url, params=params, timeout=10)
+        resp.raise_for_status()
+        data = resp.json()
+        if data.get("success") == "true":
+            for g in data.get("records", {}).get("Locations", []):
+                for loc in g.get("Location", []):
+                    if loc.get("LocationName") == location:
+                        location_data = loc
+                        break
+                if location_data:
+                    break
+
+    # 2. 鄉鎮名，用靜態映射直接定位縣市，一次 API 呼叫
+    if not location_data:
+        county = TOWNSHIP_TO_COUNTY.get(location)
+        if county:
+            dataset_id = COUNTY_FORECAST_DATASET[county]
+            url = f"{base_url}/{dataset_id}"
+            params = {"Authorization": api_key, "format": "JSON", "locationName": location}
+            resp = requests.get(url, params=params, timeout=10)
+            resp.raise_for_status()
+            data = resp.json()
+            if data.get("success") == "true":
+                for g in data.get("records", {}).get("Locations", []):
+                    for loc in g.get("Location", []):
+                        if loc.get("LocationName") == location:
+                            location_data = loc
+                            matched_county = county
+                            break
+                    if location_data:
+                        break
+
+    if not location_data:
+        return {"error": f"找不到「{location}」的預報資料，請輸入縣市名（如臺中市）或鄉鎮名（如霧峰區）"}
+
+    # 解析天氣要素
+    elements = {}
+    for elem in location_data.get("WeatherElement", []):
+        elements[elem["ElementName"]] = elem.get("Time", [])
+
+    weather_times = elements.get("天氣現象", [])
+    forecasts = []
+    for i, t in enumerate(weather_times[:14]):  # 最多取 7 天（14 個 12 小時時段）
+        forecast = {
+            "開始時間": t.get("StartTime", ""),
+            "結束時間": t.get("EndTime", ""),
+            "天氣": t.get("ElementValue", [{}])[0].get("Weather", ""),
         }
 
-    except requests.exceptions.Timeout:
-        return {"error": "請求超時，請稍後再試"}
-    except requests.exceptions.RequestException as e:
-        return {"error": f"網路請求失敗: {str(e)}"}
-    except Exception as e:
-        return {"error": f"發生錯誤: {str(e)}"}
+        def get_val(name, key, idx=i):
+            times = elements.get(name, [])
+            if idx < len(times):
+                vals = times[idx].get("ElementValue", [{}])
+                return vals[0].get(key, "") if vals else ""
+            return ""
+
+        forecast["平均溫度"] = get_val("平均溫度", "Temperature")
+        forecast["最高溫度"] = get_val("最高溫度", "MaxTemperature")
+        forecast["最低溫度"] = get_val("最低溫度", "MinTemperature")
+        forecast["降雨機率"] = get_val("降雨機率", "ProbabilityOfPrecipitation")
+        forecast["相對濕度"] = get_val("相對濕度", "RelativeHumidity")
+        forecast["風速"] = get_val("風速", "WindSpeed")
+        forecast["風向"] = get_val("風向", "WindDirection")
+
+        forecasts.append(forecast)
+
+    result = {"地點": location, "預報": forecasts}
+    if matched_county:
+        result["所屬縣市"] = matched_county
+    return result
+
+
+# 縣市對應農業氣象分區
+COUNTY_TO_AGR_REGION = {
+    "基隆市": "北部地區", "臺北市": "北部地區", "新北市": "北部地區",
+    "桃園市": "北部地區", "新竹市": "北部地區", "新竹縣": "北部地區",
+    "宜蘭縣": "東北部地區",
+    "苗栗縣": "中部地區", "臺中市": "中部地區", "彰化縣": "中部地區",
+    "南投縣": "中部地區", "雲林縣": "中部地區",
+    "嘉義市": "南部地區", "嘉義縣": "南部地區", "臺南市": "南部地區",
+    "高雄市": "南部地區", "屏東縣": "南部地區",
+    "花蓮縣": "東部地區", "臺東縣": "東南部地區",
+    "澎湖縣": "南部地區", "金門縣": "南部地區", "連江縣": "北部地區",
+}
+
+
+def _fetch_agri_weather(api_key: str, location: str) -> Dict[str, Any]:
+    """查詢農業氣象預報（F-A0010-001）"""
+    url = "https://opendata.cwa.gov.tw/fileapi/v1/opendataapi/F-A0010-001"
+    params = {"Authorization": api_key, "format": "JSON"}
+    response = requests.get(url, params=params, timeout=10)
+    response.raise_for_status()
+    data = response.json()
+
+    agr = data.get("cwaopendata", {}).get("resources", {}).get("resource", {}).get("data", {}).get("agrWeatherForecasts", {})
+    if not agr:
+        return {"error": "無法取得農業氣象資料"}
+
+    # 找出對應分區
+    county = TOWNSHIP_TO_COUNTY.get(location, location)
+    target_region = COUNTY_TO_AGR_REGION.get(county)
+    if not target_region and "地區" in location:
+        target_region = location
+
+    result = {"天氣概況": agr.get("weatherProfile", "")}
+
+    # 地區預報
+    for loc in agr.get("weatherForecasts", {}).get("location", []):
+        name = loc.get("locationName", "")
+        if target_region and name != target_region:
+            continue
+        elements = loc.get("weatherElements", {})
+        wx_daily = elements.get("Wx", {}).get("daily", [])
+        max_t = elements.get("MaxT", {}).get("daily", [])
+        min_t = elements.get("MinT", {}).get("daily", [])
+        days = []
+        for i, wx in enumerate(wx_daily):
+            day = {"日期": wx.get("dataDate", ""), "天氣": wx.get("weather", "")}
+            if i < len(max_t):
+                day["最高溫"] = max_t[i].get("temperature", "")
+            if i < len(min_t):
+                day["最低溫"] = min_t[i].get("temperature", "")
+            days.append(day)
+        result["農業氣象預報"] = {"地區": name, "預報": days}
+        break
+
+    # 積溫資料
+    for loc in agr.get("agrAdvices", {}).get("agrForecasts", {}).get("location", []):
+        name = loc.get("locationName", "")
+        if target_region and name != target_region:
+            continue
+        daily = loc.get("weatherElements", {}).get("daily", [])
+        days = [{"日期": d.get("dataDate", ""), "度日": d.get("degreeDay", ""), "累積積溫": d.get("accumulatedTemperature", "")} for d in daily]
+        result["積溫資料"] = {"地區": name, "積溫": days}
+        break
+
+    return result
 
 
 @mcp.tool()
-def get_weather_forecast(location: str) -> Dict[str, Any]:
+def get_weather(location: str, query_type: str = "current") -> Dict[str, Any]:
     """
-    取得指定縣市未來一週天氣預報（資料來源：中央氣象署）。
+    查詢指定地點的天氣資訊（資料來源：中央氣象署）。
 
-    與 get_weather（即時觀測）不同，此工具提供未來預報資料，適合用於農務規劃建議，
-    例如：是否適合灌溉、施肥、採收、是否需要防颱防寒等。
+    支援縣市（如「臺中市」）、鄉鎮（如「霧峰區」「魚池鄉」）、氣象站名（如「日月潭」）。
+    若查詢景點或地址，請先轉換為所在的鄉鎮名稱再呼叫此工具。
+
+    重要：請根據使用者的問題選擇最節省的 query_type，不要每次都用 "all"。
+    - 使用者問「現在天氣」「目前溫度」→ 用 "current"
+    - 使用者問「明天天氣」「這週會下雨嗎」「未來天氣」→ 用 "forecast"
+    - 使用者問「農業氣象」「積溫」「農事規劃」→ 用 "agri"
+    - 使用者問「完整天氣」或需要綜合分析時 → 才用 "all"
 
     參數：
-    - location: 縣市名稱（必填），如「臺中市」「高雄市」「臺北市」「嘉義縣」
-
-    回傳：未來一週每 12 小時的天氣現象、溫度、降雨機率、濕度、風速等。
+    - location: 地點名稱（必填），如「臺中市」「霧峰區」「竹東鎮」「高雄」
+    - query_type: 查詢類型，可選值：
+      - "current"（預設）：僅回傳即時觀測（溫度、濕度、氣壓、風速、降雨量）
+      - "forecast"：僅回傳未來一週逐 12 小時鄉鎮預報
+      - "agri"：僅回傳農業氣象預報（天氣概況、分區預報、積溫資料）
+      - "all"：同時回傳以上三者（資料量大，僅在需要綜合分析時使用）
     """
+    if not location or not location.strip():
+        return {"error": "請提供地點名稱，例如：臺中市、霧峰區、竹東鎮"}
+
     api_key = settings.CWA_API_KEY
     if not api_key:
         return {"error": "未設定中央氣象署 API Key"}
 
-    if not location or not location.strip():
-        return {"error": "請提供縣市名稱，例如：臺中市、高雄市"}
-
     location = _normalize_location(location)
+    query_type = (query_type or "all").strip().lower()
 
-    url = "https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-D0047-091"
-    params = {
-        "Authorization": api_key,
-        "format": "JSON",
-        "locationName": location,
-    }
+    result = {"location": location}
 
     try:
-        response = requests.get(url, params=params, timeout=10)
-        response.raise_for_status()
-        data = response.json()
+        if query_type in ("all", "current"):
+            result["即時觀測"] = _fetch_current_weather(api_key, location)
 
-        if data.get("success") != "true":
-            return {"error": "API 請求失敗"}
+        if query_type in ("all", "forecast"):
+            result["天氣預報"] = _fetch_forecast(api_key, location)
 
-        locations_list = data.get("records", {}).get("Locations", [])
-        if not locations_list:
-            return {"error": f"找不到「{location}」的預報資料，請使用完整縣市名如「臺中市」"}
+        if query_type in ("all", "agri"):
+            result["農業氣象"] = _fetch_agri_weather(api_key, location)
 
-        location_data = None
-        for loc_group in locations_list:
-            for loc in loc_group.get("Location", []):
-                if loc.get("LocationName") == location:
-                    location_data = loc
-                    break
-            if location_data:
-                break
-
-        if not location_data:
-            return {"error": f"找不到「{location}」的預報資料，請確認縣市名稱"}
-
-        # 解析各天氣要素
-        elements = {}
-        for elem in location_data.get("WeatherElement", []):
-            elements[elem["ElementName"]] = elem.get("Time", [])
-
-        # 組合預報時段
-        weather_times = elements.get("天氣現象", [])
-        forecasts = []
-        for i, t in enumerate(weather_times):
-            forecast = {
-                "開始時間": t.get("StartTime", ""),
-                "結束時間": t.get("EndTime", ""),
-                "天氣": t.get("ElementValue", [{}])[0].get("Weather", ""),
-            }
-
-            def get_val(name, key, idx=i):
-                times = elements.get(name, [])
-                if idx < len(times):
-                    vals = times[idx].get("ElementValue", [{}])
-                    return vals[0].get(key, "") if vals else ""
-                return ""
-
-            forecast["平均溫度"] = get_val("平均溫度", "Temperature")
-            forecast["最高溫度"] = get_val("最高溫度", "MaxTemperature")
-            forecast["最低溫度"] = get_val("最低溫度", "MinTemperature")
-            forecast["降雨機率"] = get_val("降雨機率", "ProbabilityOfPrecipitation")
-            forecast["相對濕度"] = get_val("相對濕度", "RelativeHumidity")
-            forecast["風速"] = get_val("風速", "WindSpeed")
-            forecast["風向"] = get_val("風向", "WindDirection")
-
-            forecasts.append(forecast)
-
-        return {
-            "location": location,
-            "description": "未來一週逐12小時天氣預報",
-            "forecasts": forecasts,
-        }
+        return result
 
     except requests.exceptions.Timeout:
         return {"error": "請求超時，請稍後再試"}
@@ -663,6 +818,8 @@ def get_weather_forecast(location: str) -> Dict[str, Any]:
         return {"error": f"網路請求失敗: {str(e)}"}
     except Exception as e:
         return {"error": f"發生錯誤: {str(e)}"}
+
+
 
 
 # ============== 農產品價格工具 ==============

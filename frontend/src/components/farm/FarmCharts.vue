@@ -1,5 +1,5 @@
 <template>
-  <div class="p-6">
+  <div class="p-4 sm:p-6">
     <div class="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
       <ChartCard
         title="溫度 / 濕度趨勢（近 30 天）"

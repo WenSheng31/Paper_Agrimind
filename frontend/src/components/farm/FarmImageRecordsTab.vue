@@ -1,5 +1,5 @@
 <template>
-  <div class="p-6">
+  <div class="p-4 sm:p-6">
     <div v-if="isAdmin" class="mb-4">
       <button
         @click="showCreateModal = true"

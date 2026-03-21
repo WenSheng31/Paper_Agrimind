@@ -427,8 +427,7 @@ const toolDisplayNames = {
   query_database: '查詢農場資料庫',
   get_farms_overview: '查詢農場總覽',
   search_knowledge: '搜尋知識庫',
-  get_weather: '查詢中央氣象署即時觀測',
-  get_weather_forecast: '查詢中央氣象署天氣預報',
+  get_weather: '查詢中央氣象署天氣資訊',
   get_crop_price: '查詢農業部農產品行情',
 }
 

@@ -8,7 +8,7 @@ class ChatLog(Base):
     __tablename__ = "chat_logs"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     session_id = Column(String, nullable=False, index=True)
     role = Column(String, nullable=False)  # "user" | "assistant"
     content = Column(Text, nullable=False)

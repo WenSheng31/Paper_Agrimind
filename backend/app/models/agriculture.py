@@ -46,7 +46,7 @@ class Operation(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     farm_id = Column(Integer, ForeignKey("farms.id"), nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # 操作人員
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)  # 操作人員
     
     description = Column(String, index=True) # 操作內容
     performed_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -61,7 +61,7 @@ class ImageRecord(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     farm_id = Column(Integer, ForeignKey("farms.id"), nullable=False, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     description = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 

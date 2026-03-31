@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, cast, Numeric
 from datetime import timedelta
 import math
@@ -231,16 +231,21 @@ class AgricultureService:
         db.add(db_op)
         db.commit()
         db.refresh(db_op)
+        db_op.operator_name = db_op.operator.username if db_op.operator else None
         return db_op
 
     @staticmethod
     def list_operations(db: Session, farm_id: int, page: int, page_size: int) -> dict:
         query = (
             db.query(Operation)
+            .options(joinedload(Operation.operator))
             .filter(Operation.farm_id == farm_id)
             .order_by(Operation.performed_at.desc())
         )
-        return AgricultureService.paginate(query, page, page_size)
+        result = AgricultureService.paginate(query, page, page_size)
+        for item in result["items"]:
+            item.operator_name = item.operator.username if item.operator else None
+        return result
 
     @staticmethod
     def update_operation(db: Session, op_id: int, op_data: dict):

@@ -29,6 +29,7 @@
                   {{ record.farm_name }}
                 </span>
                 <span>{{ formatDate(record.created_at) }}</span>
+                <span v-if="record.creator_name">· {{ record.creator_name }}</span>
               </div>
             </div>
             <button

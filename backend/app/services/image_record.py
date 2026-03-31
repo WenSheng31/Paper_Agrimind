@@ -27,6 +27,7 @@ class ImageRecordService:
             created_at=record.created_at,
             images=record.images,
             farm_name=record.farm.name if record.farm else None,
+            creator_name=record.creator.username if record.creator else None,
         )
 
     @staticmethod
@@ -117,7 +118,7 @@ class ImageRecordService:
     def get_record(db: Session, record_id: int) -> ImageRecord:
         record = (
             db.query(ImageRecord)
-            .options(joinedload(ImageRecord.images), joinedload(ImageRecord.farm))
+            .options(joinedload(ImageRecord.images), joinedload(ImageRecord.farm), joinedload(ImageRecord.creator))
             .filter(ImageRecord.id == record_id)
             .first()
         )
@@ -135,6 +136,7 @@ class ImageRecordService:
         query = db.query(ImageRecord).options(
             joinedload(ImageRecord.images),
             joinedload(ImageRecord.farm),
+            joinedload(ImageRecord.creator),
         )
         if farm_id:
             query = query.filter(ImageRecord.farm_id == farm_id)

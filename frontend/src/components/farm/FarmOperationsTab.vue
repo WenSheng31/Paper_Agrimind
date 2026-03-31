@@ -21,7 +21,7 @@
     </div>
 
     <div v-else class="overflow-x-auto rounded border border-slate-200 dark:border-slate-700">
-      <table class="w-full min-w-100">
+      <table class="w-full min-w-150">
         <thead class="bg-slate-50 dark:bg-slate-900/50">
           <tr>
             <th
@@ -35,6 +35,12 @@
                 text-slate-700 dark:border-slate-700 dark:text-slate-300"
             >
               描述
+            </th>
+            <th
+              class="border-b border-slate-200 px-4 py-3 text-left text-base font-medium
+                text-slate-700 dark:border-slate-700 dark:text-slate-300"
+            >
+              操作人員
             </th>
             <th
               v-if="isAdmin"
@@ -63,7 +69,16 @@
             >
               {{ op.description }}
             </td>
-            <td v-if="isAdmin" class="border-b border-slate-200 px-4 py-3 text-center dark:border-slate-700">
+            <td
+              class="border-b border-slate-200 px-4 py-3 text-base text-slate-600
+                dark:border-slate-700 dark:text-slate-400"
+            >
+              {{ op.operator_name || '—' }}
+            </td>
+            <td
+              v-if="isAdmin"
+              class="border-b border-slate-200 px-4 py-3 text-center dark:border-slate-700"
+            >
               <button
                 @click="handleDelete(op)"
                 class="cursor-pointer text-red-600 transition hover:text-red-700 dark:text-red-400
@@ -223,7 +238,9 @@ const displayPages = computed(() => {
 })
 
 function formatDateTime(dateString) {
-  return new Date(dateString).toLocaleString('zh-TW')
+  const d = new Date(dateString)
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
 async function loadData() {

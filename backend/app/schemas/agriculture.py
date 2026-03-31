@@ -81,7 +81,8 @@ class OperationResponse(OperationBase):
     id: int
     farm_id: int
     user_id: Optional[int] = None
-    
+    operator_name: Optional[str] = None
+
     class Config:
         from_attributes = True
 
@@ -124,6 +125,7 @@ class ImageRecordResponse(BaseModel):
     created_at: datetime
     images: List[ImageFileResponse] = []
     farm_name: Optional[str] = None
+    creator_name: Optional[str] = None
 
     class Config:
         from_attributes = True

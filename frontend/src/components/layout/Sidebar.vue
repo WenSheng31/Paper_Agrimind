@@ -25,6 +25,7 @@
       <ul class="space-y-2">
         <li>
           <router-link
+            id="nav-home"
             to="/home"
             @click="$emit('close')"
             class="flex cursor-pointer items-center gap-3 rounded p-3 text-slate-700 transition
@@ -39,6 +40,7 @@
 
         <li>
           <router-link
+            id="nav-farms"
             to="/farms"
             @click="$emit('close')"
             class="flex cursor-pointer items-center gap-3 rounded p-3 text-slate-700 transition
@@ -67,6 +69,7 @@
 
         <li>
           <router-link
+            id="nav-image-records"
             to="/image-records"
             @click="$emit('close')"
             class="flex cursor-pointer items-center gap-3 rounded p-3 text-slate-700 transition

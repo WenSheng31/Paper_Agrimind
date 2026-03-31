@@ -292,6 +292,26 @@ class ApiService {
     })
   }
 
+  // ===== Task Progress API =====
+  async getTaskProgress() {
+    return this.request('/api/task-progress')
+  }
+
+  async updateTaskProgress(data) {
+    return this.request('/api/task-progress', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async getAllTaskProgress() {
+    return this.request('/api/task-progress/all')
+  }
+
+  async resetTaskProgress(userId) {
+    return this.request(`/api/task-progress/${userId}`, { method: 'DELETE' })
+  }
+
   // ===== Admin Users API =====
   async getUsers() {
     return this.request('/api/admin/users')

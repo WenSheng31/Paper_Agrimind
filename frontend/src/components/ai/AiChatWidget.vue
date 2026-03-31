@@ -42,7 +42,7 @@
     <transition name="chat">
       <div
         v-if="isOpen"
-        class="fixed inset-0 z-50 flex h-[100dvh] flex-col overflow-hidden bg-white
+        class="fixed inset-0 z-50 flex h-full flex-col overflow-hidden bg-white
           md:inset-auto md:right-6 md:bottom-6 md:h-[750px] md:max-h-[90vh] md:w-[500px]
           md:rounded-lg md:border md:border-slate-200 dark:border-slate-700 dark:bg-slate-900"
       >
@@ -482,12 +482,24 @@ watch(isOpen, async (newVal) => {
   }
 })
 
+function handleTaskAskAi(e) {
+  const question = e.detail?.question
+  if (!question) return
+  isOpen.value = true
+  nextTick(() => {
+    inputMessage.value = question
+    nextTick(() => sendMessage())
+  })
+}
+
 onMounted(() => {
   window.addEventListener('keydown', handleKeyDown)
+  window.addEventListener('task-ask-ai', handleTaskAskAi)
 })
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyDown)
+  window.removeEventListener('task-ask-ai', handleTaskAskAi)
   if (recognition && isListening.value) recognition.stop()
 })
 
@@ -565,6 +577,7 @@ const sendMessage = async () => {
         if (msg) {
           msg.tool_calls = toolCalls
         }
+        window.dispatchEvent(new CustomEvent('task-ai-responded'))
       },
       onError(data) {
         showToast(data.message || '發送失敗', 'error')

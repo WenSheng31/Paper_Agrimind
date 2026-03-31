@@ -25,26 +25,33 @@
     <!-- 使用者列表 -->
     <div v-else>
       <div class="overflow-x-auto rounded border border-slate-200 dark:border-slate-700">
-        <table class="w-full min-w-[900px] text-left text-base">
+        <table class="w-full min-w-120 text-left text-base">
           <thead class="bg-slate-50 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
             <tr>
               <th class="px-4 py-3 font-medium">使用者名稱</th>
-              <th class="px-4 py-3 font-medium">Email</th>
               <th class="px-4 py-3 font-medium">角色</th>
               <th class="px-4 py-3 font-medium">狀態</th>
-              <th class="px-4 py-3 font-medium">建立時間</th>
-              <th class="px-4 py-3 font-medium">操作</th>
+              <th class="px-4 py-3 font-medium">任務進度</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
-            <tr v-for="u in users" :key="u.id" class="bg-white dark:bg-slate-900">
-              <td class="max-w-[150px] truncate px-4 py-3 font-medium text-slate-900 dark:text-white" :title="u.username">{{ u.username }}</td>
-              <td class="max-w-[200px] truncate px-4 py-3 text-slate-600 dark:text-slate-400" :title="u.email">{{ u.email }}</td>
+            <tr
+              v-for="u in users"
+              :key="u.id"
+              class="cursor-pointer bg-white transition hover:bg-slate-50 dark:bg-slate-900
+                dark:hover:bg-slate-800"
+              @click="openDetailPopover(u)"
+            >
+              <td class="px-4 py-3 font-medium text-slate-900 dark:text-white">
+                {{ u.username }}
+              </td>
               <td class="px-4 py-3">
                 <span
-                  :class="u.is_admin
-                    ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
-                    : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'"
+                  :class="
+                    u.is_admin
+                      ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                      : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
+                  "
                   class="inline-block rounded-full px-2.5 py-0.5 text-sm font-medium"
                 >
                   {{ u.is_admin ? '管理員' : '一般用戶' }}
@@ -52,55 +59,34 @@
               </td>
               <td class="px-4 py-3">
                 <span
-                  :class="u.is_active
-                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                    : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'"
+                  :class="
+                    u.is_active
+                      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                      : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                  "
                   class="inline-block rounded-full px-2.5 py-0.5 text-sm font-medium"
                 >
                   {{ u.is_active ? '啟用' : '停用' }}
                 </span>
               </td>
-              <td class="px-4 py-3 text-slate-600 dark:text-slate-400">{{ formatDate(u.created_at) }}</td>
               <td class="px-4 py-3">
-                <div v-if="u.id !== currentUser.id" class="flex items-center gap-2">
-                  <button
-                    @click="handleToggleAdmin(u)"
-                    :title="u.is_admin ? '降級為一般用戶' : '升級為管理員'"
-                    class="cursor-pointer rounded p-1.5 text-amber-600 transition hover:bg-amber-50
-                      dark:text-amber-400 dark:hover:bg-amber-900/30"
+                <template v-if="getTaskStatus(u.id)">
+                  <span
+                    :class="
+                      getTaskStatus(u.id).is_completed
+                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                        : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                    "
+                    class="inline-block rounded-full px-2.5 py-0.5 text-sm font-medium"
                   >
-                    <ShieldCheck v-if="u.is_admin" :size="18" />
-                    <Shield v-else :size="18" />
-                  </button>
-                  <button
-                    @click="handleToggleActive(u)"
-                    :title="u.is_active ? '停用帳號' : '啟用帳號'"
-                    class="cursor-pointer rounded p-1.5 transition"
-                    :class="u.is_active
-                      ? 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700'
-                      : 'text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/30'"
-                  >
-                    <UserX v-if="u.is_active" :size="18" />
-                    <UserCheck v-else :size="18" />
-                  </button>
-                  <button
-                    @click="openResetPasswordModal(u)"
-                    title="重設密碼"
-                    class="cursor-pointer rounded p-1.5 text-blue-600 transition hover:bg-blue-50
-                      dark:text-blue-400 dark:hover:bg-blue-900/30"
-                  >
-                    <KeyRound :size="18" />
-                  </button>
-                  <button
-                    @click="openDeleteModal(u)"
-                    title="刪除帳號"
-                    class="cursor-pointer rounded p-1.5 text-red-600 transition hover:bg-red-50
-                      dark:text-red-400 dark:hover:bg-red-900/30"
-                  >
-                    <Trash2 :size="18" />
-                  </button>
-                </div>
-                <span v-else class="text-base text-slate-400 dark:text-slate-500">目前帳號</span>
+                    {{
+                      getTaskStatus(u.id).is_completed
+                        ? '已完成'
+                        : `進行中 ${getTaskStatus(u.id).current_step}/${TOTAL_TASKS}`
+                    }}
+                  </span>
+                </template>
+                <span v-else class="text-sm text-slate-400 dark:text-slate-500">未開始</span>
               </td>
             </tr>
           </tbody>
@@ -108,11 +94,24 @@
       </div>
     </div>
 
+    <!-- 帳號詳情彈窗 -->
+    <UserDetailModal
+      :user="detailTarget"
+      :task-status="detailTarget ? getTaskStatus(detailTarget.id) : null"
+      :is-self="detailTarget?.id === currentUser.id"
+      @close="detailTarget = null"
+      @toggle-admin="handleToggleAdmin"
+      @toggle-active="handleToggleActive"
+      @reset-password="openResetPasswordModal"
+      @reset-task="handleResetTask"
+      @delete="openDeleteModal"
+    />
+
     <!-- 重設密碼 Modal -->
     <transition name="fade">
       <div
         v-if="resetTarget"
-        class="modal-backdrop z-50 flex items-center justify-center"
+        class="modal-backdrop z-[60] flex items-center justify-center"
         @click.self="resetTarget = null"
       >
         <div class="m-4 w-full max-w-md rounded bg-white p-6 dark:bg-slate-800">
@@ -125,14 +124,16 @@
             type="password"
             placeholder="請輸入新密碼"
             class="mb-4 w-full rounded border border-slate-300 bg-white px-3 py-2 text-base
-              text-slate-900 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500
-              dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:focus:border-emerald-500"
+              text-slate-900 outline-none focus:border-emerald-500 focus:ring-1
+              focus:ring-emerald-500 dark:border-slate-600 dark:bg-slate-700 dark:text-white
+              dark:focus:border-emerald-500"
           />
           <div class="flex gap-3">
             <button
               @click="resetTarget = null; newPassword = ''"
               class="flex-1 cursor-pointer rounded border border-slate-300 px-4 py-2 text-slate-700
-                transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
+                transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300
+                dark:hover:bg-slate-700"
             >
               取消
             </button>
@@ -153,7 +154,7 @@
     <transition name="fade">
       <div
         v-if="deleteTarget"
-        class="modal-backdrop z-50 flex items-center justify-center"
+        class="modal-backdrop z-[60] flex items-center justify-center"
         @click.self="deleteTarget = null"
       >
         <div class="m-4 w-full max-w-md rounded bg-white p-6 dark:bg-slate-800">
@@ -165,7 +166,8 @@
             <button
               @click="deleteTarget = null"
               class="flex-1 cursor-pointer rounded border border-slate-300 px-4 py-2 text-slate-700
-                transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
+                transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300
+                dark:hover:bg-slate-700"
             >
               取消
             </button>
@@ -193,40 +195,56 @@
           <h2 class="mb-4 text-2xl font-bold text-slate-800 dark:text-white">新增帳號</h2>
           <div class="space-y-4">
             <div>
-              <label class="mb-1 block text-base font-medium text-slate-700 dark:text-slate-300">使用者名稱</label>
+              <label class="mb-1 block text-base font-medium text-slate-700 dark:text-slate-300">
+                使用者名稱
+              </label>
               <input
                 v-model="createForm.username"
                 type="text"
                 placeholder="請輸入使用者名稱"
                 class="w-full rounded border border-slate-300 bg-white px-3 py-2 text-base
-                  text-slate-900 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500
-                  dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:focus:border-emerald-500"
+                  text-slate-900 outline-none focus:border-emerald-500 focus:ring-1
+                  focus:ring-emerald-500 dark:border-slate-600 dark:bg-slate-700 dark:text-white
+                  dark:focus:border-emerald-500"
               />
             </div>
             <div>
-              <label class="mb-1 block text-base font-medium text-slate-700 dark:text-slate-300">Email</label>
+              <label class="mb-1 block text-base font-medium text-slate-700 dark:text-slate-300">
+                Email
+              </label>
               <input
                 v-model="createForm.email"
                 type="email"
                 placeholder="請輸入 Email"
                 class="w-full rounded border border-slate-300 bg-white px-3 py-2 text-base
-                  text-slate-900 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500
-                  dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:focus:border-emerald-500"
+                  text-slate-900 outline-none focus:border-emerald-500 focus:ring-1
+                  focus:ring-emerald-500 dark:border-slate-600 dark:bg-slate-700 dark:text-white
+                  dark:focus:border-emerald-500"
               />
             </div>
             <div>
-              <label class="mb-1 block text-base font-medium text-slate-700 dark:text-slate-300">密碼</label>
+              <label class="mb-1 block text-base font-medium text-slate-700 dark:text-slate-300">
+                密碼
+              </label>
               <input
                 v-model="createForm.password"
                 type="password"
                 placeholder="請輸入密碼"
                 class="w-full rounded border border-slate-300 bg-white px-3 py-2 text-base
-                  text-slate-900 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500
-                  dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:focus:border-emerald-500"
+                  text-slate-900 outline-none focus:border-emerald-500 focus:ring-1
+                  focus:ring-emerald-500 dark:border-slate-600 dark:bg-slate-700 dark:text-white
+                  dark:focus:border-emerald-500"
               />
             </div>
-            <label class="flex cursor-pointer items-center gap-2 text-base text-slate-700 dark:text-slate-300">
-              <input v-model="createForm.is_admin" type="checkbox" class="cursor-pointer accent-emerald-600" />
+            <label
+              class="flex cursor-pointer items-center gap-2 text-base text-slate-700
+                dark:text-slate-300"
+            >
+              <input
+                v-model="createForm.is_admin"
+                type="checkbox"
+                class="cursor-pointer accent-emerald-600"
+              />
               設為管理員
             </label>
           </div>
@@ -234,13 +252,16 @@
             <button
               @click="showCreateModal = false"
               class="flex-1 cursor-pointer rounded border border-slate-300 px-4 py-2 text-slate-700
-                transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
+                transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300
+                dark:hover:bg-slate-700"
             >
               取消
             </button>
             <button
               @click="confirmCreate"
-              :disabled="submitting || !createForm.username || !createForm.email || !createForm.password"
+              :disabled="
+                submitting || !createForm.username || !createForm.email || !createForm.password
+              "
               class="flex-1 cursor-pointer rounded bg-emerald-600 px-4 py-2 text-white transition
                 hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
@@ -259,7 +280,9 @@ import { useToast } from '@/composables/useToast'
 import { useAuthStore } from '@/stores/auth'
 import { storeToRefs } from 'pinia'
 import api from '@/services/api'
-import { Users, Shield, ShieldCheck, UserX, UserCheck, KeyRound, Trash2, UserPlus } from 'lucide-vue-next'
+import { Users, Trash2, UserPlus } from 'lucide-vue-next'
+import UserDetailModal from '@/components/admin/UserDetailModal.vue'
+import { TOTAL_TASKS } from '@/composables/useTaskGuide'
 
 const authStore = useAuthStore()
 const { user: currentUser } = storeToRefs(authStore)
@@ -273,9 +296,42 @@ const resetTarget = ref(null)
 const newPassword = ref('')
 const showCreateModal = ref(false)
 const createForm = ref({ username: '', email: '', password: '', is_admin: false })
+const taskProgressMap = ref({})
+const detailTarget = ref(null)
 
 function formatDate(dateString) {
   return new Date(dateString).toLocaleDateString('zh-TW')
+}
+
+function getTaskStatus(userId) {
+  return taskProgressMap.value[userId] || null
+}
+
+function openDetailPopover(u) {
+  detailTarget.value = u
+}
+
+async function loadTaskProgress() {
+  try {
+    const items = await api.getAllTaskProgress()
+    const map = {}
+    for (const item of items) {
+      map[item.user_id] = item
+    }
+    taskProgressMap.value = map
+  } catch {
+    // 靜默失敗
+  }
+}
+
+async function handleResetTask(u) {
+  try {
+    await api.resetTaskProgress(u.id)
+    showToast(`已重置「${u.username}」的任務進度`)
+    await loadTaskProgress()
+  } catch (error) {
+    showToast(error.message || '重置失敗', 'error')
+  }
 }
 
 async function loadUsers() {
@@ -292,9 +348,14 @@ async function loadUsers() {
 async function handleToggleAdmin(u) {
   try {
     const updated = await api.toggleUserAdmin(u.id)
-    const idx = users.value.findIndex(x => x.id === u.id)
+    const idx = users.value.findIndex((x) => x.id === u.id)
     if (idx !== -1) users.value[idx] = updated
-    showToast(updated.is_admin ? `已將「${u.username}」升級為管理員` : `已將「${u.username}」降級為一般用戶`)
+    if (detailTarget.value?.id === u.id) detailTarget.value = updated
+    showToast(
+      updated.is_admin
+        ? `已將「${u.username}」升級為管理員`
+        : `已將「${u.username}」降級為一般用戶`,
+    )
   } catch (error) {
     showToast(error.message || '操作失敗', 'error')
   }
@@ -303,8 +364,9 @@ async function handleToggleAdmin(u) {
 async function handleToggleActive(u) {
   try {
     const updated = await api.toggleUserActive(u.id)
-    const idx = users.value.findIndex(x => x.id === u.id)
+    const idx = users.value.findIndex((x) => x.id === u.id)
     if (idx !== -1) users.value[idx] = updated
+    if (detailTarget.value?.id === u.id) detailTarget.value = updated
     showToast(updated.is_active ? `已啟用「${u.username}」` : `已停用「${u.username}」`)
   } catch (error) {
     showToast(error.message || '操作失敗', 'error')
@@ -342,6 +404,7 @@ async function confirmDelete() {
     await api.deleteUser(deleteTarget.value.id)
     showToast(`已刪除「${deleteTarget.value.username}」`)
     deleteTarget.value = null
+    detailTarget.value = null
     await loadUsers()
   } catch (error) {
     showToast(error.message || '刪除失敗', 'error')
@@ -367,5 +430,6 @@ async function confirmCreate() {
 
 onMounted(() => {
   loadUsers()
+  loadTaskProgress()
 })
 </script>

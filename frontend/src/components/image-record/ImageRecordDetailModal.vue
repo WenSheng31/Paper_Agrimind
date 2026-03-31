@@ -353,6 +353,7 @@ watch(
       loading.value = true
       try {
         record.value = await api.getImageRecord(id)
+        window.dispatchEvent(new CustomEvent('task-image-viewed'))
       } catch (error) {
         showToast(error.message || '載入失敗', 'error')
         emit('close')

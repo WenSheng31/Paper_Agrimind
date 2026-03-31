@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from .core.config import settings
 from .core.init_db import init_db
-from .api import auth, admin, agriculture, ai, knowledge, image_records, chat_logs
+from .api import auth, admin, agriculture, ai, knowledge, image_records, chat_logs, task_progress
 from .services.ai import mcp_client
 
 @asynccontextmanager
@@ -39,6 +39,7 @@ app.include_router(ai.router)
 app.include_router(knowledge.router)
 app.include_router(image_records.router)
 app.include_router(chat_logs.router)
+app.include_router(task_progress.router)
 
 @app.get("/uploads/{file_path:path}")
 def serve_upload(file_path: str):

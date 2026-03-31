@@ -144,7 +144,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useToast } from '@/composables/useToast'
 import { useAuthStore } from '@/stores/auth'
@@ -178,6 +178,10 @@ const submitting = ref(false)
 const farm = ref(null)
 const activeTab = ref('charts')
 const showEditModal = ref(false)
+
+watch(activeTab, () => {
+  window.dispatchEvent(new CustomEvent('task-tab-clicked'))
+})
 
 // 格式化日期字串
 function formatDate(dateString) {

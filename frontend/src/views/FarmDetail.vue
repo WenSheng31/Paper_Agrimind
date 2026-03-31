@@ -157,7 +157,7 @@ import FarmSensorTab from '@/components/farm/FarmSensorTab.vue'
 import FarmOperationsTab from '@/components/farm/FarmOperationsTab.vue'
 import FarmImageRecordsTab from '@/components/farm/FarmImageRecordsTab.vue'
 import AiSummary from '@/components/ai/AiSummary.vue'
-import { useOnboardingTour } from '@/composables/useOnboardingTour'
+// import { useOnboardingTour } from '@/composables/useOnboardingTour'
 
 const tabComponents = {
   charts: FarmCharts,
@@ -171,7 +171,7 @@ const { showToast } = useToast()
 const authStore = useAuthStore()
 const { isAdmin } = storeToRefs(authStore)
 
-const { startTour } = useOnboardingTour('farmDetail')
+// const { startTour } = useOnboardingTour('farmDetail')
 
 const loading = ref(true)
 const submitting = ref(false)
@@ -215,6 +215,6 @@ async function handleUpdateFarm(formData) {
 
 onMounted(async () => {
   await loadFarmData()
-  setTimeout(() => startTour(), 500)
+  // setTimeout(() => startTour(), 500)
 })
 </script>

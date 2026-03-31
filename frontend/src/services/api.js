@@ -285,6 +285,13 @@ class ApiService {
     })
   }
 
+  async deleteChatSessionsBatch(sessionIds) {
+    return this.request('/api/admin/chat-logs/batch-delete', {
+      method: 'POST',
+      body: JSON.stringify({ session_ids: sessionIds }),
+    })
+  }
+
   // ===== Admin Users API =====
   async getUsers() {
     return this.request('/api/admin/users')

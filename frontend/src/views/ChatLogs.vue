@@ -3,15 +3,26 @@
     <!-- 標題列 -->
     <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
       <h1 class="text-3xl font-bold text-slate-800 dark:text-white">對話紀錄</h1>
-      <select
-        v-model="filterUserId"
-        @change="onFilterChange"
-        class="cursor-pointer rounded border border-slate-300 bg-white px-3 py-2 text-base text-slate-700
-          dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300"
-      >
-        <option :value="null">所有使用者</option>
-        <option v-for="u in users" :key="u.id" :value="u.id">{{ u.username }}</option>
-      </select>
+      <div class="flex items-center gap-3">
+        <button
+          v-if="selectedIds.length > 0"
+          @click="openBatchDeleteModal"
+          class="flex cursor-pointer items-center gap-2 rounded bg-red-600 px-4 py-2 text-base
+            text-white transition hover:bg-red-700"
+        >
+          <Trash2 :size="16" />
+          刪除已選 ({{ selectedIds.length }})
+        </button>
+        <select
+          v-model="filterUserId"
+          @change="onFilterChange"
+          class="cursor-pointer rounded border border-slate-300 bg-white px-3 py-2 text-base
+            text-slate-700 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300"
+        >
+          <option :value="null">所有使用者</option>
+          <option v-for="u in users" :key="u.id" :value="u.id">{{ u.username }}</option>
+        </select>
+      </div>
     </div>
 
     <!-- 載入中 -->
@@ -29,11 +40,19 @@
         <table class="w-full min-w-[700px] text-left text-base">
           <thead class="bg-slate-50 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
             <tr>
+              <th class="w-10 px-4 py-3">
+                <input
+                  type="checkbox"
+                  :checked="isAllSelected"
+                  :indeterminate="isIndeterminate"
+                  @change="toggleSelectAll"
+                  class="cursor-pointer accent-emerald-600"
+                />
+              </th>
               <th class="px-4 py-3 font-medium">使用者</th>
               <th class="px-4 py-3 font-medium">對話主題</th>
               <th class="px-4 py-3 font-medium">訊息數</th>
               <th class="px-4 py-3 font-medium">最後活動</th>
-              <th class="px-4 py-3 font-medium">操作</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
@@ -42,25 +61,33 @@
               :key="s.session_id"
               class="bg-white dark:bg-slate-900"
             >
-              <td class="max-w-[120px] truncate px-4 py-3 text-slate-600 dark:text-slate-400" :title="s.username">{{ s.username }}</td>
+              <td class="px-4 py-3">
+                <input
+                  type="checkbox"
+                  :checked="selectedIds.includes(s.session_id)"
+                  @change="toggleSelect(s.session_id)"
+                  class="cursor-pointer accent-emerald-600"
+                />
+              </td>
+              <td
+                class="max-w-[120px] truncate px-4 py-3 text-slate-600 dark:text-slate-400"
+                :title="s.username"
+              >
+                {{ s.username }}
+              </td>
               <td class="max-w-[250px] px-4 py-3">
                 <router-link
                   :to="`/chat-logs/${encodeURIComponent(s.session_id)}`"
-                  class="block truncate font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+                  class="block truncate font-medium text-emerald-700 hover:underline
+                    dark:text-emerald-400"
                   :title="s.first_query"
                 >
                   {{ s.first_query || '(空)' }}
                 </router-link>
               </td>
               <td class="px-4 py-3 text-slate-600 dark:text-slate-400">{{ s.message_count }}</td>
-              <td class="px-4 py-3 text-slate-600 dark:text-slate-400">{{ formatDate(s.last_active) }}</td>
-              <td class="px-4 py-3">
-                <button
-                  @click="openDeleteModal(s)"
-                  class="cursor-pointer text-red-600 transition hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                >
-                  <Trash2 :size="18" />
-                </button>
+              <td class="px-4 py-3 text-slate-600 dark:text-slate-400">
+                {{ formatDate(s.last_active) }}
               </td>
             </tr>
           </tbody>
@@ -93,28 +120,29 @@
       </div>
     </div>
 
-    <!-- 刪除確認 Modal -->
+    <!-- 批次刪除確認 Modal -->
     <transition name="fade">
       <div
-        v-if="deleteTarget"
+        v-if="showBatchDelete"
         class="modal-backdrop z-50 flex items-center justify-center"
-        @click.self="deleteTarget = null"
+        @click.self="showBatchDelete = false"
       >
         <div class="m-4 w-full max-w-md rounded bg-white p-6 dark:bg-slate-800">
-          <h2 class="mb-4 text-2xl font-bold text-slate-800 dark:text-white">確認刪除</h2>
+          <h2 class="mb-4 text-2xl font-bold text-slate-800 dark:text-white">批次刪除</h2>
           <p class="mb-6 text-slate-600 dark:text-slate-400">
-            確定要刪除「{{ deleteTarget.first_query || deleteTarget.session_id }}」的完整對話紀錄嗎？此操作無法復原。
+            確定要刪除已選取的 <span class="font-bold text-red-600 dark:text-red-400">{{ selectedIds.length }}</span> 筆對話紀錄嗎？此操作無法復原。
           </p>
           <div class="flex gap-3">
             <button
-              @click="deleteTarget = null"
+              @click="showBatchDelete = false"
               class="flex-1 cursor-pointer rounded border border-slate-300 px-4 py-2 text-slate-700
-                transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
+                transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300
+                dark:hover:bg-slate-700"
             >
               取消
             </button>
             <button
-              @click="confirmDelete"
+              @click="confirmBatchDelete"
               :disabled="submitting"
               class="flex-1 cursor-pointer rounded bg-red-600 px-4 py-2 text-white transition
                 hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
@@ -129,7 +157,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useToast } from '@/composables/useToast'
 import api from '@/services/api'
 import { MessageSquareText, Trash2 } from 'lucide-vue-next'
@@ -143,7 +171,34 @@ const users = ref([])
 const filterUserId = ref(null)
 const currentPage = ref(1)
 const totalPages = ref(0)
-const deleteTarget = ref(null)
+
+// 多選
+const selectedIds = ref([])
+const showBatchDelete = ref(false)
+
+const isAllSelected = computed(
+  () => sessions.value.length > 0 && selectedIds.value.length === sessions.value.length,
+)
+const isIndeterminate = computed(
+  () => selectedIds.value.length > 0 && selectedIds.value.length < sessions.value.length,
+)
+
+function toggleSelectAll() {
+  if (isAllSelected.value) {
+    selectedIds.value = []
+  } else {
+    selectedIds.value = sessions.value.map((s) => s.session_id)
+  }
+}
+
+function toggleSelect(sessionId) {
+  const idx = selectedIds.value.indexOf(sessionId)
+  if (idx === -1) {
+    selectedIds.value.push(sessionId)
+  } else {
+    selectedIds.value.splice(idx, 1)
+  }
+}
 
 function formatDate(dateString) {
   return new Date(dateString).toLocaleString('zh-TW')
@@ -172,30 +227,32 @@ async function loadSessions() {
 
 function onFilterChange() {
   currentPage.value = 1
+  selectedIds.value = []
   loadSessions()
 }
 
 function goToPage(page) {
   if (page < 1 || page > totalPages.value) return
   currentPage.value = page
+  selectedIds.value = []
   loadSessions()
 }
 
-function openDeleteModal(session) {
-  deleteTarget.value = session
+function openBatchDeleteModal() {
+  showBatchDelete.value = true
 }
 
-async function confirmDelete() {
-  if (!deleteTarget.value) return
+async function confirmBatchDelete() {
+  if (selectedIds.value.length === 0) return
   submitting.value = true
-  const sessionId = deleteTarget.value.session_id
   try {
-    await api.deleteChatSession(sessionId)
-    showToast('對話紀錄已刪除')
-    deleteTarget.value = null
+    await api.deleteChatSessionsBatch(selectedIds.value)
+    showToast(`已刪除 ${selectedIds.value.length} 筆對話紀錄`)
+    selectedIds.value = []
+    showBatchDelete.value = false
     await loadSessions()
   } catch (error) {
-    showToast(error.message || '刪除失敗', 'error')
+    showToast(error.message || '批次刪除失敗', 'error')
   } finally {
     submitting.value = false
   }

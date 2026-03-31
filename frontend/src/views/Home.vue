@@ -26,11 +26,11 @@ import api from '@/services/api'
 import FarmQuickNav from '@/components/dashboard/FarmQuickNav.vue'
 import DashboardCharts from '@/components/dashboard/DashboardCharts.vue'
 import AiSummary from '@/components/ai/AiSummary.vue'
-import { useOnboardingTour } from '@/composables/useOnboardingTour'
+// import { useOnboardingTour } from '@/composables/useOnboardingTour'
 
 const authStore = useAuthStore()
 const { showToast } = useToast()
-const { startTour } = useOnboardingTour('home')
+// const { startTour } = useOnboardingTour('home')
 
 const farms = ref([])
 
@@ -44,6 +44,6 @@ async function loadFarms() {
 
 onMounted(async () => {
   await loadFarms()
-  setTimeout(() => startTour(), 500)
+  // setTimeout(() => startTour(), 500)
 })
 </script>

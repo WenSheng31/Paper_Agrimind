@@ -19,21 +19,22 @@ async def query_ai(request: QueryRequest, user=Depends(get_current_user)):
     try:
         response, tool_usages = await mcp_client.process_query(request.query, request.session_id, request.images or None)
 
-        # 儲存對話紀錄
-        images_json = None
-        if request.images:
-            images_json = json.dumps(
-                [{"data": img.data, "media_type": img.media_type} for img in request.images],
-                ensure_ascii=False,
-            )
-        save_chat_log(user.id, request.session_id, "user", request.query, images_json=images_json)
-        tool_calls_json = None
-        if tool_usages:
-            tool_calls_json = json.dumps(
-                [{"name": t.tool_name, "args": t.tool_args, "output": t.tool_output} for t in tool_usages],
-                ensure_ascii=False,
-            )
-        save_chat_log(user.id, request.session_id, "assistant", response, tool_calls_json=tool_calls_json)
+        # 儲存對話紀錄（跳過 AI 摘要請求）
+        if not request.session_id.startswith("summary-"):
+            images_json = None
+            if request.images:
+                images_json = json.dumps(
+                    [{"data": img.data, "media_type": img.media_type} for img in request.images],
+                    ensure_ascii=False,
+                )
+            save_chat_log(user.id, request.session_id, "user", request.query, images_json=images_json)
+            tool_calls_json = None
+            if tool_usages:
+                tool_calls_json = json.dumps(
+                    [{"name": t.tool_name, "args": t.tool_args, "output": t.tool_output} for t in tool_usages],
+                    ensure_ascii=False,
+                )
+            save_chat_log(user.id, request.session_id, "assistant", response, tool_calls_json=tool_calls_json)
 
         return QueryResponse(response=response, session_id=request.session_id, tool_used=tool_usages)
     except RuntimeError as e:
@@ -70,16 +71,17 @@ async def stream_ai(request: QueryRequest, user=Depends(get_current_user)):
             yield f"event: error\ndata: {json.dumps({'message': 'AI 查詢失敗，請稍後再試'}, ensure_ascii=False)}\n\n"
             return
 
-        # 儲存對話紀錄
-        images_json = None
-        if request.images:
-            images_json = json.dumps(
-                [{"data": img.data, "media_type": img.media_type} for img in request.images],
-                ensure_ascii=False,
-            )
-        save_chat_log(user.id, request.session_id, "user", request.query, images_json=images_json)
-        tool_calls_json = json.dumps(all_tool_calls, ensure_ascii=False) if all_tool_calls else None
-        save_chat_log(user.id, request.session_id, "assistant", full_response, tool_calls_json=tool_calls_json)
+        # 儲存對話紀錄（跳過 AI 摘要請求）
+        if not request.session_id.startswith("summary-"):
+            images_json = None
+            if request.images:
+                images_json = json.dumps(
+                    [{"data": img.data, "media_type": img.media_type} for img in request.images],
+                    ensure_ascii=False,
+                )
+            save_chat_log(user.id, request.session_id, "user", request.query, images_json=images_json)
+            tool_calls_json = json.dumps(all_tool_calls, ensure_ascii=False) if all_tool_calls else None
+            save_chat_log(user.id, request.session_id, "assistant", full_response, tool_calls_json=tool_calls_json)
 
     return StreamingResponse(
         event_generator(),

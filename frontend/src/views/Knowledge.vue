@@ -158,9 +158,9 @@ import { storeToRefs } from 'pinia'
 import api from '@/services/api'
 import { Plus, BookOpen, Trash2 } from 'lucide-vue-next'
 import UploadKnowledgeModal from '@/components/knowledge/UploadKnowledgeModal.vue'
-import { useOnboardingTour } from '@/composables/useOnboardingTour'
+// import { useOnboardingTour } from '@/composables/useOnboardingTour'
 
-const { startTour } = useOnboardingTour('knowledge')
+// const { startTour } = useOnboardingTour('knowledge')
 
 const authStore = useAuthStore()
 const { isAdmin } = storeToRefs(authStore)
@@ -238,6 +238,6 @@ async function confirmDelete() {
 
 onMounted(async () => {
   await loadDocuments()
-  setTimeout(() => startTour(), 500)
+  // setTimeout(() => startTour(), 500)
 })
 </script>

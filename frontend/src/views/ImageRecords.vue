@@ -127,9 +127,9 @@ import { Plus, Camera, Image as ImageIcon } from 'lucide-vue-next'
 import SafeImage from '@/components/common/SafeImage.vue'
 import CreateImageRecordModal from '@/components/image-record/CreateImageRecordModal.vue'
 import ImageRecordDetailModal from '@/components/image-record/ImageRecordDetailModal.vue'
-import { useOnboardingTour } from '@/composables/useOnboardingTour'
+// import { useOnboardingTour } from '@/composables/useOnboardingTour'
 
-const { startTour } = useOnboardingTour('imageRecords')
+// const { startTour } = useOnboardingTour('imageRecords')
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
@@ -197,6 +197,6 @@ function onRecordDeleted() {
 
 onMounted(async () => {
   await Promise.all([loadFarms(), loadRecords()])
-  setTimeout(() => startTour(), 500)
+  // setTimeout(() => startTour(), 500)
 })
 </script>

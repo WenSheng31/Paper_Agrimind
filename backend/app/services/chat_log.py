@@ -111,3 +111,10 @@ class ChatLogService:
         db.commit()
         if count == 0:
             raise ValueError("找不到該對話紀錄")
+
+    @staticmethod
+    def delete_sessions_batch(db: Session, session_ids: list[str]) -> int:
+        """批次刪除多個 session 的對話紀錄"""
+        count = db.query(ChatLog).filter(ChatLog.session_id.in_(session_ids)).delete(synchronize_session="fetch")
+        db.commit()
+        return count

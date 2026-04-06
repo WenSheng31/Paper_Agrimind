@@ -420,6 +420,7 @@ class AiService {
     const reader = response.body.getReader()
     const decoder = new TextDecoder()
     let buffer = ''
+    let eventType = null
 
     while (true) {
       const { done, value } = await reader.read()
@@ -430,7 +431,6 @@ class AiService {
       // 保留最後一個不完整的行
       buffer = lines.pop()
 
-      let eventType = null
       for (const line of lines) {
         if (line.startsWith('event: ')) {
           eventType = line.slice(7).trim()

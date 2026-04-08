@@ -105,6 +105,7 @@
 
             <!-- AI 分析 -->
             <div class="mb-4">
+              <h3 class="mb-1 text-base font-medium text-slate-500 dark:text-slate-400">AI 分析</h3>
               <div v-if="analyzing" class="flex items-center gap-2 text-base text-slate-400">
                 <div
                   class="h-3 w-3 animate-spin rounded-full border-2 border-slate-300

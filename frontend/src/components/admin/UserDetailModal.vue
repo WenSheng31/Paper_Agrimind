@@ -113,18 +113,8 @@
                 {{ user.is_active ? '停用' : '啟用' }}
               </button>
             </div>
-            <div class="flex gap-2">
+            <div v-if="taskStatus" class="flex gap-2">
               <button
-                @click="$emit('reset-password', user)"
-                class="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded
-                  border border-slate-200 py-2 text-sm text-slate-700 transition hover:bg-slate-50
-                  dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700"
-              >
-                <KeyRound :size="15" />
-                重設密碼
-              </button>
-              <button
-                v-if="taskStatus"
                 @click="$emit('reset-task', user)"
                 class="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded
                   border border-slate-200 py-2 text-sm text-slate-700 transition hover:bg-slate-50
@@ -160,7 +150,7 @@ import {
   ShieldCheck,
   UserX,
   UserCheck,
-  KeyRound,
+
   Trash2,
   RotateCcw,
   Calendar,
@@ -174,7 +164,7 @@ defineProps({
   isSelf: { type: Boolean, default: false },
 })
 
-defineEmits(['close', 'toggle-admin', 'toggle-active', 'reset-password', 'reset-task', 'delete'])
+defineEmits(['close', 'toggle-admin', 'toggle-active', 'reset-task', 'delete'])
 
 function formatDate(dateString) {
   return new Date(dateString).toLocaleDateString('zh-TW')

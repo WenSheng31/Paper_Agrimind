@@ -1,21 +1,10 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
 
 
-class UserCreate(BaseModel):
-    username: str
-    email: EmailStr
-    password: str
-
-
-class AdminCreateUser(UserCreate):
-    is_admin: bool = False
-
-
-class UserLogin(BaseModel):
-    email: EmailStr
-    password: str
+class GoogleLoginRequest(BaseModel):
+    credential: str
 
 
 class UserResponse(BaseModel):
@@ -37,7 +26,3 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     user_id: Optional[int] = None
-
-
-class ResetPasswordRequest(BaseModel):
-    password: str

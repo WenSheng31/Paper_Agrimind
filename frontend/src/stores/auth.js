@@ -20,25 +20,11 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  async function register(userData) {
+  async function loginWithGoogle(credential) {
     loading.value = true
     error.value = null
     try {
-      const response = await api.register(userData)
-      return { success: true, data: response }
-    } catch (err) {
-      error.value = err.message
-      return { success: false, message: err.message }
-    } finally {
-      loading.value = false
-    }
-  }
-
-  async function login(credentials) {
-    loading.value = true
-    error.value = null
-    try {
-      const response = await api.login(credentials)
+      const response = await api.loginWithGoogle(credential)
       setToken(response.access_token)
       await fetchUser()
       return { success: true }
@@ -66,6 +52,7 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = null
     setToken(null)
     error.value = null
+    window.google?.accounts?.id?.disableAutoSelect()
   }
 
   async function initialize() {
@@ -81,8 +68,7 @@ export const useAuthStore = defineStore('auth', () => {
     error,
     isAuthenticated,
     isAdmin,
-    register,
-    login,
+    loginWithGoogle,
     logout,
     fetchUser,
     initialize,

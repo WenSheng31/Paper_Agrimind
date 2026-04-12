@@ -3,84 +3,55 @@
     <div class="w-full max-w-md">
       <div class="rounded border border-slate-200 bg-white p-8 dark:border-slate-700 dark:bg-slate-800">
         <h1 class="mb-6 text-center text-2xl font-bold text-slate-800 dark:text-white">登入</h1>
-
-        <form @submit.prevent="handleLogin" class="space-y-4">
-          <div>
-            <label for="email" class="mb-1 block text-base font-medium text-slate-700 dark:text-slate-300">
-              電子郵件
-            </label>
-            <input
-              id="email"
-              v-model="form.email"
-              type="email"
-              required
-              class="w-full rounded border border-slate-300 px-3 py-2 focus:ring-2
-                focus:ring-emerald-500 focus:outline-none dark:border-slate-600 dark:bg-slate-950 dark:text-white dark:placeholder-slate-400"
-              placeholder="your@email.com"
-            />
-          </div>
-
-          <div>
-            <label for="password" class="mb-1 block text-base font-medium text-slate-700 dark:text-slate-300">
-              密碼
-            </label>
-            <input
-              id="password"
-              v-model="form.password"
-              type="password"
-              required
-              class="w-full rounded border border-slate-300 px-3 py-2 focus:ring-2
-                focus:ring-emerald-500 focus:outline-none dark:border-slate-600 dark:bg-slate-950 dark:text-white dark:placeholder-slate-400"
-              placeholder="••••••••"
-            />
-          </div>
-
-          <button
-            type="submit"
-            :disabled="loading"
-            class="w-full cursor-pointer rounded bg-emerald-600 py-2 text-white transition
-              hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-emerald-600 dark:hover:bg-emerald-700"
-          >
-            {{ loading ? '登入中...' : '登入' }}
-          </button>
-        </form>
-
-        <div class="mt-4 text-center text-base text-slate-600 dark:text-slate-400">
-          還沒有帳號？
-          <router-link to="/register" class="text-emerald-600 hover:underline dark:text-emerald-400">
-            立即註冊
-          </router-link>
-        </div>
+        <div ref="googleBtnRef" class="flex justify-center"></div>
+        <p v-if="loading" class="mt-4 text-center text-slate-600 dark:text-slate-400">登入中...</p>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { storeToRefs } from 'pinia'
 import { useToast } from '@/composables/useToast'
 
 const router = useRouter()
 const authStore = useAuthStore()
-const { loading } = storeToRefs(authStore)
 const { showToast } = useToast()
+const loading = ref(false)
+const googleBtnRef = ref(null)
 
-const form = ref({
-  email: '',
-  password: '',
-})
-
-async function handleLogin() {
-  const result = await authStore.login(form.value)
-
+async function handleCredentialResponse(response) {
+  loading.value = true
+  const result = await authStore.loginWithGoogle(response.credential)
   if (result.success) {
     showToast('登入成功')
     router.push('/home')
   } else {
     showToast(result.message, 'error')
   }
+  loading.value = false
 }
+
+onMounted(() => {
+  const initGoogle = () => {
+    if (window.google?.accounts?.id) {
+      window.google.accounts.id.initialize({
+        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+        callback: handleCredentialResponse,
+      })
+      window.google.accounts.id.renderButton(googleBtnRef.value, {
+        theme: 'outline',
+        size: 'large',
+        width: 300,
+        text: 'signin_with',
+        locale: 'zh-TW',
+      })
+    } else {
+      setTimeout(initGoogle, 100)
+    }
+  }
+  initGoogle()
+})
 </script>

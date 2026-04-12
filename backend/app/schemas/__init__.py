@@ -1,1 +1,1 @@
-from .user import UserCreate, UserLogin, UserResponse, Token, TokenData
+from .user import GoogleLoginRequest, UserResponse, Token, TokenData

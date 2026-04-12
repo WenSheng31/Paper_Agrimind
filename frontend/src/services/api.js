@@ -51,17 +51,10 @@ class ApiService {
   }
 
   // ===== Auth API =====
-  async register(userData) {
-    return this.request('/api/auth/register', {
+  async loginWithGoogle(credential) {
+    return this.request('/api/auth/login/google', {
       method: 'POST',
-      body: JSON.stringify(userData),
-    })
-  }
-
-  async login(credentials) {
-    return this.request('/api/auth/login', {
-      method: 'POST',
-      body: JSON.stringify(credentials),
+      body: JSON.stringify({ credential }),
     })
   }
 
@@ -329,19 +322,6 @@ class ApiService {
     return this.request(`/api/admin/users/${userId}/toggle-admin`, { method: 'PUT' })
   }
 
-  async resetUserPassword(userId, password) {
-    return this.request(`/api/admin/users/${userId}/reset-password`, {
-      method: 'PUT',
-      body: JSON.stringify({ password }),
-    })
-  }
-
-  async createUser(userData) {
-    return this.request('/api/admin/users', {
-      method: 'POST',
-      body: JSON.stringify(userData),
-    })
-  }
 }
 
 // ===== AI API =====

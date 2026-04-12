@@ -2,16 +2,20 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from datetime import timedelta
 
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
+
 from ..core.database import get_db
 from ..core.security import create_access_token, verify_token
 from ..core.config import settings
-from ..schemas.user import UserCreate, UserLogin, UserResponse, Token
+from ..schemas.user import GoogleLoginRequest, UserResponse, Token
 from ..services.user import user_service
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 security = HTTPBearer()
+
 
 # 依賴注入: 獲取當前用戶
 def get_current_user(
@@ -57,32 +61,42 @@ def get_current_admin_user(
     return current_user
 
 
-@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-def register(user_data: UserCreate, db: Session = Depends(get_db)):
+@router.post("/login/google", response_model=Token)
+def google_login(body: GoogleLoginRequest, db: Session = Depends(get_db)):
+    """Google 登入"""
+    # 1. 驗證 Google ID Token
     try:
-        user = user_service.create_user(db, user_data)
-        return user
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-
-
-@router.post("/login", response_model=Token)
-def login(user_data: UserLogin, db: Session = Depends(get_db)):
-    user = user_service.authenticate_user(db, user_data.email, user_data.password)
-    if not user:
+        idinfo = id_token.verify_oauth2_token(
+            body.credential,
+            google_requests.Request(),
+            settings.GOOGLE_CLIENT_ID
+        )
+    except ValueError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Email 或密碼錯誤"
+            detail="Google 憑證無效"
         )
 
-    # 檢查用戶是否被停用
+    # 2. 取得用戶資訊
+    google_sub = idinfo["sub"]
+    email = idinfo["email"]
+    name = idinfo.get("name", email.split("@")[0])
+
+    # 3. 查找或建立用戶
+    user = user_service.find_or_create_google_user(db, google_sub, email, name)
+
+    # 4. 檢查是否被停用
     if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="該帳號已被停用"
         )
 
-    # 建立 access token
+    # 5. 自動升級管理員
+    if email in settings.admin_emails_list and not user.is_admin:
+        user_service.set_admin(db, user)
+
+    # 6. 建立 JWT
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": str(user.id)},

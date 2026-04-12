@@ -18,3 +18,4 @@ mcp
 pgvector
 sentence-transformers
 PyPDF2
+google-auth

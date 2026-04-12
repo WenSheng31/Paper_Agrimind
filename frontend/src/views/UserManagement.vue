@@ -1,16 +1,8 @@
 <template>
   <div class="p-4 sm:p-6">
     <!-- 標題 -->
-    <div class="mb-6 flex items-center justify-between">
+    <div class="mb-6">
       <h1 class="text-3xl font-bold text-slate-800 dark:text-white">帳號管理</h1>
-      <button
-        @click="showCreateModal = true"
-        class="flex cursor-pointer items-center gap-2 rounded bg-emerald-600 px-4 py-2 text-white
-          transition hover:bg-emerald-700"
-      >
-        <UserPlus :size="20" />
-        新增帳號
-      </button>
     </div>
 
     <!-- 載入中 -->
@@ -102,53 +94,10 @@
       @close="detailTarget = null"
       @toggle-admin="handleToggleAdmin"
       @toggle-active="handleToggleActive"
-      @reset-password="openResetPasswordModal"
+
       @reset-task="handleResetTask"
       @delete="openDeleteModal"
     />
-
-    <!-- 重設密碼 Modal -->
-    <transition name="fade">
-      <div
-        v-if="resetTarget"
-        class="modal-backdrop z-[60] flex items-center justify-center"
-        @click.self="resetTarget = null"
-      >
-        <div class="m-4 w-full max-w-md rounded bg-white p-6 dark:bg-slate-800">
-          <h2 class="mb-4 text-2xl font-bold text-slate-800 dark:text-white">重設密碼</h2>
-          <p class="mb-4 text-base text-slate-600 dark:text-slate-400">
-            為「{{ resetTarget.username }}」設定新密碼
-          </p>
-          <input
-            v-model="newPassword"
-            type="password"
-            placeholder="請輸入新密碼"
-            class="mb-4 w-full rounded border border-slate-300 bg-white px-3 py-2 text-base
-              text-slate-900 outline-none focus:border-emerald-500 focus:ring-1
-              focus:ring-emerald-500 dark:border-slate-600 dark:bg-slate-700 dark:text-white
-              dark:focus:border-emerald-500"
-          />
-          <div class="flex gap-3">
-            <button
-              @click="resetTarget = null; newPassword = ''"
-              class="flex-1 cursor-pointer rounded border border-slate-300 px-4 py-2 text-slate-700
-                transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300
-                dark:hover:bg-slate-700"
-            >
-              取消
-            </button>
-            <button
-              @click="confirmResetPassword"
-              :disabled="submitting || !newPassword"
-              class="flex-1 cursor-pointer rounded bg-emerald-600 px-4 py-2 text-white transition
-                hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {{ submitting ? '處理中...' : '確認重設' }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </transition>
 
     <!-- 刪除確認 Modal -->
     <transition name="fade">
@@ -184,93 +133,6 @@
       </div>
     </transition>
 
-    <!-- 新增帳號 Modal -->
-    <transition name="fade">
-      <div
-        v-if="showCreateModal"
-        class="modal-backdrop z-50 flex items-center justify-center"
-        @click.self="showCreateModal = false"
-      >
-        <div class="m-4 w-full max-w-md rounded bg-white p-6 dark:bg-slate-800">
-          <h2 class="mb-4 text-2xl font-bold text-slate-800 dark:text-white">新增帳號</h2>
-          <div class="space-y-4">
-            <div>
-              <label class="mb-1 block text-base font-medium text-slate-700 dark:text-slate-300">
-                使用者名稱
-              </label>
-              <input
-                v-model="createForm.username"
-                type="text"
-                placeholder="請輸入使用者名稱"
-                class="w-full rounded border border-slate-300 bg-white px-3 py-2 text-base
-                  text-slate-900 outline-none focus:border-emerald-500 focus:ring-1
-                  focus:ring-emerald-500 dark:border-slate-600 dark:bg-slate-700 dark:text-white
-                  dark:focus:border-emerald-500"
-              />
-            </div>
-            <div>
-              <label class="mb-1 block text-base font-medium text-slate-700 dark:text-slate-300">
-                Email
-              </label>
-              <input
-                v-model="createForm.email"
-                type="email"
-                placeholder="請輸入 Email"
-                class="w-full rounded border border-slate-300 bg-white px-3 py-2 text-base
-                  text-slate-900 outline-none focus:border-emerald-500 focus:ring-1
-                  focus:ring-emerald-500 dark:border-slate-600 dark:bg-slate-700 dark:text-white
-                  dark:focus:border-emerald-500"
-              />
-            </div>
-            <div>
-              <label class="mb-1 block text-base font-medium text-slate-700 dark:text-slate-300">
-                密碼
-              </label>
-              <input
-                v-model="createForm.password"
-                type="password"
-                placeholder="請輸入密碼"
-                class="w-full rounded border border-slate-300 bg-white px-3 py-2 text-base
-                  text-slate-900 outline-none focus:border-emerald-500 focus:ring-1
-                  focus:ring-emerald-500 dark:border-slate-600 dark:bg-slate-700 dark:text-white
-                  dark:focus:border-emerald-500"
-              />
-            </div>
-            <label
-              class="flex cursor-pointer items-center gap-2 text-base text-slate-700
-                dark:text-slate-300"
-            >
-              <input
-                v-model="createForm.is_admin"
-                type="checkbox"
-                class="cursor-pointer accent-emerald-600"
-              />
-              設為管理員
-            </label>
-          </div>
-          <div class="mt-6 flex gap-3">
-            <button
-              @click="showCreateModal = false"
-              class="flex-1 cursor-pointer rounded border border-slate-300 px-4 py-2 text-slate-700
-                transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300
-                dark:hover:bg-slate-700"
-            >
-              取消
-            </button>
-            <button
-              @click="confirmCreate"
-              :disabled="
-                submitting || !createForm.username || !createForm.email || !createForm.password
-              "
-              class="flex-1 cursor-pointer rounded bg-emerald-600 px-4 py-2 text-white transition
-                hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {{ submitting ? '建立中...' : '確認建立' }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </transition>
   </div>
 </template>
 
@@ -280,7 +142,7 @@ import { useToast } from '@/composables/useToast'
 import { useAuthStore } from '@/stores/auth'
 import { storeToRefs } from 'pinia'
 import api from '@/services/api'
-import { Users, Trash2, UserPlus } from 'lucide-vue-next'
+import { Users, Trash2 } from 'lucide-vue-next'
 import UserDetailModal from '@/components/admin/UserDetailModal.vue'
 import { TOTAL_TASKS } from '@/composables/useTaskGuide'
 
@@ -292,10 +154,6 @@ const loading = ref(true)
 const submitting = ref(false)
 const users = ref([])
 const deleteTarget = ref(null)
-const resetTarget = ref(null)
-const newPassword = ref('')
-const showCreateModal = ref(false)
-const createForm = ref({ username: '', email: '', password: '', is_admin: false })
 const taskProgressMap = ref({})
 const detailTarget = ref(null)
 
@@ -373,26 +231,6 @@ async function handleToggleActive(u) {
   }
 }
 
-function openResetPasswordModal(u) {
-  resetTarget.value = u
-  newPassword.value = ''
-}
-
-async function confirmResetPassword() {
-  if (!resetTarget.value || !newPassword.value) return
-  submitting.value = true
-  try {
-    await api.resetUserPassword(resetTarget.value.id, newPassword.value)
-    showToast(`已重設「${resetTarget.value.username}」的密碼`)
-    resetTarget.value = null
-    newPassword.value = ''
-  } catch (error) {
-    showToast(error.message || '重設密碼失敗', 'error')
-  } finally {
-    submitting.value = false
-  }
-}
-
 function openDeleteModal(u) {
   deleteTarget.value = u
 }
@@ -408,21 +246,6 @@ async function confirmDelete() {
     await loadUsers()
   } catch (error) {
     showToast(error.message || '刪除失敗', 'error')
-  } finally {
-    submitting.value = false
-  }
-}
-
-async function confirmCreate() {
-  submitting.value = true
-  try {
-    await api.createUser(createForm.value)
-    showToast('帳號建立成功')
-    showCreateModal.value = false
-    createForm.value = { username: '', email: '', password: '', is_admin: false }
-    await loadUsers()
-  } catch (error) {
-    showToast(error.message || '建立帳號失敗', 'error')
   } finally {
     submitting.value = false
   }

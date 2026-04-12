@@ -11,13 +11,6 @@ const router = createRouter({
       component: () => import('@/views/Login.vue'),
       meta: { requiresGuest: true },
     },
-    {
-      path: '/register',
-      name: 'register',
-      component: () => import('@/views/Register.vue'),
-      meta: { requiresGuest: true },
-    },
-
     // 主要內容（需登入）
     {
       path: '/',

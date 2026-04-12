@@ -879,7 +879,7 @@ def get_crop_price(
         # 過濾休市資料，並驗證作物名稱確實匹配（API 會忽略無效 CropName 回傳全部資料）
         results = [
             item for item in data
-            if item.get("作物代號") != "rest" and crop_name in item.get("作物名稱", "")
+            if item.get("作物代號") != "rest" and crop_name in (item.get("作物名稱") or "")
         ]
 
         # 精確查詢無結果時，改用模糊搜尋（拉大量資料後過濾）
@@ -898,7 +898,7 @@ def get_crop_price(
 
             results = [
                 item for item in all_data
-                if item.get("作物代號") != "rest" and crop_name in item.get("作物名稱", "")
+                if item.get("作物代號") != "rest" and crop_name in (item.get("作物名稱") or "")
             ][:top]
 
         if not results:

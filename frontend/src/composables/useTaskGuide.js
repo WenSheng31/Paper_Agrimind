@@ -6,7 +6,7 @@ const SESSION_DECIDED_KEY = 'argimind-task-decided'
 const SESSION_ACTIVE_KEY = 'argimind-task-active'
 
 export const QUESTIONNAIRE_URL = 'https://forms.gle/mmJdpt1RCdgiAZKS8'
-export const TOTAL_TASKS = 9
+export const TOTAL_TASKS = 8
 
 const tasks = [
   {
@@ -31,14 +31,6 @@ const tasks = [
   },
   {
     id: 3,
-    title: '瀏覽農場詳情分頁',
-    description:
-      '在農場詳情頁面中，請點擊任一分頁（感測器數據、農務紀錄、影像紀錄等）來查看不同類型的資料。',
-    detectType: 'event',
-    detectEvent: 'task-tab-clicked',
-  },
-  {
-    id: 4,
     title: '查看影像紀錄',
     description: '請進入影像紀錄頁面，點擊任何一筆紀錄查看詳細內容與 AI 分析結果。',
     route: { name: 'image-records' },
@@ -47,7 +39,7 @@ const tasks = [
     detectEvent: 'task-image-viewed',
   },
   {
-    id: 5,
+    id: 4,
     title: '詢問農場現況',
     description: '假設你想快速了解某個農場目前的狀況，請透過 AI 助手提問。',
     question: '請幫我看看目前各農場的土壤養分狀況如何？',
@@ -55,7 +47,7 @@ const tasks = [
     detectEvent: 'task-ai-responded',
   },
   {
-    id: 6,
+    id: 5,
     title: '查詢天氣資訊',
     description: '假設你明天打算進行田間作業，想先確認天氣狀況，請透過 AI 助手查詢。',
     question: '台中市未來一週的天氣如何？',
@@ -63,7 +55,7 @@ const tasks = [
     detectEvent: 'task-ai-responded',
   },
   {
-    id: 7,
+    id: 6,
     title: '查詢農產品行情',
     description: '假設你想了解最近某種作物的市場批發價格，請透過 AI 助手查詢。',
     question: '最近番茄的批發價格怎麼樣？',
@@ -71,7 +63,7 @@ const tasks = [
     detectEvent: 'task-ai-responded',
   },
   {
-    id: 8,
+    id: 7,
     title: '查詢農業知識',
     description:
       '假設你的作物出現了某種異常（如葉片發黃、蟲害等），想了解可能的原因與防治方法，請透過 AI 助手提問。',
@@ -80,7 +72,7 @@ const tasks = [
     detectEvent: 'task-ai-responded',
   },
   {
-    id: 9,
+    id: 8,
     title: '綜合情境諮詢',
     description:
       '假設你正在考慮這幾天是否該施肥或噴藥，請透過 AI 助手，綜合考量農場土壤狀況與天氣預報，給你具體建議。',
